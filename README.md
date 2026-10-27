@@ -1,4 +1,4 @@
-# MedTwin AI
+# YA-DOC
 
 AI-powered clinical simulation platform for medical students.
 Educational use only - it never diagnoses real patients.
