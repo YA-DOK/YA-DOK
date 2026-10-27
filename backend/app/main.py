@@ -1,10 +1,14 @@
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health
+from app.api.routes import auth, health, users
 from app.core.config import settings
 
-app = FastAPI(title="MedTwin AI API", version="0.1.0")
+app = FastAPI(
+    title="Yadok AI API",
+    version="0.1.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,4 +18,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(health.router, prefix="/api")
+# Health endpoints
+app.include_router(
+    health.router,
+    prefix="/api",
+)
+
+# Authentication endpoints
+app.include_router(
+    auth.router,
+    prefix="/api/v1",
+)
+
+# User profile endpoints
+app.include_router(
+    users.router,
+    prefix="/api/v1",
+)

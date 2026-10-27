@@ -24,3 +24,301 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* Yadok — Living Nile background */
+
+@keyframes yadokOrbOne {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-65px, 50px, 0) scale(1.15);
+  }
+}
+
+@keyframes yadokOrbTwo {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(70px, -45px, 0) scale(1.12);
+  }
+}
+
+@keyframes yadokLotus {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-3deg);
+  }
+
+  50% {
+    transform: translate3d(-15px, 15px, 0) rotate(3deg);
+  }
+}
+
+@keyframes yadokFloating {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes yadokWave {
+
+  0%,
+  100% {
+    transform: translate3d(-10px, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(20px, -12px, 0);
+  }
+}
+
+@keyframes yadokPulse {
+  to {
+    stroke-dashoffset: -1200;
+  }
+}
+
+@keyframes yadokBreathing {
+
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes yadokEntrance {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.yadok-orb-one {
+  animation: yadokOrbOne 18s ease-in-out infinite;
+}
+
+.yadok-orb-two {
+  animation: yadokOrbTwo 23s ease-in-out infinite;
+}
+
+.yadok-lotus {
+  animation: yadokLotus 20s ease-in-out infinite;
+}
+
+.yadok-background-wave {
+  animation: yadokWave 14s ease-in-out infinite;
+}
+
+.yadok-floating-panel {
+  animation: yadokFloating 7s ease-in-out infinite;
+}
+
+.yadok-pulse-line {
+  animation: yadokPulse 9s linear infinite;
+}
+
+.yadok-status-dot {
+  animation: yadokBreathing 3s ease-in-out infinite;
+}
+
+.yadok-entrance {
+  animation: yadokEntrance 650ms ease-out both;
+}
+
+/* Respect accessibility preferences */
+@media (prefers-reduced-motion: reduce) {
+
+  .yadok-orb-one,
+  .yadok-orb-two,
+  .yadok-lotus,
+  .yadok-background-wave,
+  .yadok-floating-panel,
+  .yadok-pulse-line,
+  .yadok-status-dot,
+  .yadok-entrance {
+    animation: none !important;
+  }
+}
+/* =========================
+   YADOK AUTH ANIMATIONS
+========================= */
+
+.yadok-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+  animation: yadokGridMove 20s linear infinite;
+}
+
+.yadok-card {
+  animation: yadokCardFloat 8s ease-in-out infinite;
+}
+
+.yadok-floating-panel {
+  animation: yadokPanelFloat 6s ease-in-out infinite;
+}
+
+.yadok-pulse-path {
+  stroke-dasharray: 220 900;
+  stroke-dashoffset: 0;
+  animation: yadokPulseMove 4.5s linear infinite;
+}
+
+.yadok-dot {
+  animation: yadokDotBlink 2s ease-in-out infinite;
+}
+
+.yadok-lines {
+  animation: yadokLinesDrift 12s ease-in-out infinite;
+}
+
+.yadok-fade-up {
+  animation: yadokFadeUp 0.7s ease-out both;
+}
+
+.yadok-blob-1 {
+  animation: yadokBlob1 12s ease-in-out infinite;
+}
+
+.yadok-blob-2 {
+  animation: yadokBlob2 15s ease-in-out infinite;
+}
+
+.yadok-blob-3 {
+  animation: yadokBlob3 10s ease-in-out infinite;
+}
+
+@keyframes yadokFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes yadokGridMove {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(44px, 44px, 0);
+  }
+}
+
+@keyframes yadokCardFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes yadokPanelFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes yadokPulseMove {
+  0% {
+    stroke-dashoffset: 1120;
+  }
+  100% {
+    stroke-dashoffset: -1120;
+  }
+}
+
+@keyframes yadokDotBlink {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes yadokLinesDrift {
+  0%, 100% {
+    transform: translateX(0) translateY(0);
+  }
+  50% {
+    transform: translateX(-18px) translateY(-8px);
+  }
+}
+
+@keyframes yadokBlob1 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-40px, 35px, 0) scale(1.08);
+  }
+}
+
+@keyframes yadokBlob2 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(35px, -30px, 0) scale(1.12);
+  }
+}
+
+@keyframes yadokBlob3 {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -20px, 0) scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yadok-grid,
+  .yadok-card,
+  .yadok-floating-panel,
+  .yadok-pulse-path,
+  .yadok-dot,
+  .yadok-lines,
+  .yadok-fade-up,
+  .yadok-blob-1,
+  .yadok-blob-2,
+  .yadok-blob-3 {
+    animation: none !important;
+  }
+}

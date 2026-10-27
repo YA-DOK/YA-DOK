@@ -1,23 +1,42 @@
+
 name: Backend CI
 
 on:
   push:
     branches: [main, develop]
-    paths: ["backend/**"]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
   pull_request:
-    paths: ["backend/**"]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: backend
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - run: ruff check .
-      - run: pytest
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Ruff
+        run: ruff check .
+
+      - name: Run pytest
+        env:
+          DATABASE_URL: "postgresql+psycopg://ci_user:ci_password@127.0.0.1:5432/ci_db"
+        run: pytest
