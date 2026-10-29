@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, health, users
+from app.api.routes import auth, health, users, simulation
 from app.core.config import settings
 
 app = FastAPI(
@@ -33,5 +33,11 @@ app.include_router(
 # User profile endpoints
 app.include_router(
     users.router,
+    prefix="/api/v1",
+)
+
+# Medical simulation endpoints
+app.include_router(
+    simulation.router,
     prefix="/api/v1",
 )

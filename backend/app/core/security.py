@@ -16,7 +16,6 @@ async def get_current_user(
         Depends(bearer_scheme),
     ],
 ) -> dict:
-    # Check if an access token was provided
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -24,13 +23,27 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = credentials.credentials
+    # Check configuration without printing any secret values.
+    if not settings.supabase_url or not settings.supabase_key:
+        print(
+            "SUPABASE CONFIG ERROR:",
+            f"URL configured={bool(settings.supabase_url)},",
+            f"key configured={bool(settings.supabase_key)}",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication configuration is incomplete",
+        )
 
-    # Verify token with Supabase Auth
+    token = credentials.credentials
+    auth_url = (
+        f"{settings.supabase_url.rstrip('/')}/auth/v1/user"
+    )
+
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(
-                f"{settings.supabase_url.rstrip('/')}/auth/v1/user",
+                auth_url,
                 headers={
                     "apikey": settings.supabase_key,
                     "Authorization": f"Bearer {token}",
@@ -38,26 +51,25 @@ async def get_current_user(
             )
 
     except httpx.RequestError as exc:
+        # Log the exception type, never the access token or API key.
         print(
             "SUPABASE CONNECTION ERROR:",
             type(exc).__name__,
             str(exc),
         )
-
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Authentication service unavailable",
         ) from None
 
-    # Check Supabase response
-    if response.status_code != 200:
+    print("SUPABASE AUTH HTTP STATUS:", response.status_code)
 
+    if response.status_code != 200:
         if response.status_code >= 500:
             print(
-                "SUPABASE SERVER ERROR:",
-                response.status_code,
+                "SUPABASE SERVER RESPONSE:",
+                response.text[:500],
             )
-
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Authentication service unavailable",

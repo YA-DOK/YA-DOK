@@ -7,6 +7,8 @@ from alembic import context
 from app.core.config import settings
 from app.core.database import Base
 from app.models.profile import Profile  # noqa: F401
+from app.models.simulation_session import SimulationSessionModel
+from app.models.simulation_event import SimulationEventModel
 
 config = context.config
 
