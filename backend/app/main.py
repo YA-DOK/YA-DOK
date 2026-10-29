@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import auth, health, users
 from app.core.config import settings
+from .api.hints import router as hints_router
 
 app = FastAPI(
     title="Yadok AI API",
@@ -33,5 +34,10 @@ app.include_router(
 # User profile endpoints
 app.include_router(
     users.router,
+    prefix="/api/v1",
+)
+# Feature 06 - Training Modes & Hints
+app.include_router(
+    hints_router,
     prefix="/api/v1",
 )
