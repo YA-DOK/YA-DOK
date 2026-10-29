@@ -37,7 +37,11 @@ export function DashboardAuthArrival() {
       return;
     }
 
-    setShow(true);
+    const showFrame = window.requestAnimationFrame(() => {
+  const showFrame = window.requestAnimationFrame(() => {
+  setShow(true);
+});
+});
     // Consume the marker after the animation, not during the effect setup.
     // This works in development React Strict Mode, which re-runs effects.
     const timer = window.setTimeout(() => {
@@ -45,7 +49,10 @@ export function DashboardAuthArrival() {
       window.sessionStorage.removeItem(MARKER);
     }, 1850);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+  window.cancelAnimationFrame(showFrame);
+  window.clearTimeout(timer);
+};
   }, []);
 
   return show ? <AuthOutcome kind="success" message="Welcome to YA-DOK!" /> : null;
