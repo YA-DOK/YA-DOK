@@ -206,7 +206,7 @@ def test_patient_agent_with_provider_integration():
     class FakeLLM:
         async def generate(self, messages, **kwargs):
             assert messages[0]["role"] == "system"
-            assert "CASE DATA" in messages[0]["content"]
+            assert all(x in messages[0]["content"] for x in ('"symptoms"', '"duration"', "fever", "one day"))
             return "Yes, I have had a fever since yesterday."
 
     agent = create_patient_agent()

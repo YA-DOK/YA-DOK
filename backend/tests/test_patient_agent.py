@@ -51,7 +51,7 @@ def test_patient_agent_includes_case_in_system_prompt():
 
     assert "fever" in system_prompt
     assert "25" in system_prompt
-    assert "Never invent symptoms" in system_prompt
+    assert "\u0645\u0645\u0646\u0648\u0639 \u0627\u062e\u062a\u0631\u0627\u0639 \u0623\u0639\u0631\u0627\u0636" in system_prompt
 
 
 def test_patient_agent_includes_conversation_history():
