@@ -1,134 +1,75 @@
+"use client";
 
-export const instant = false;
+import Link from "next/link";
+import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
+import { DashboardIcon } from "@/components/dashboard/dashboard-icon";
+import { useDashboardUI, translated } from "@/components/dashboard/dashboard-ui";
+
+const indicators = [
+  { icon: "book", ar: "الحالات المكتملة", en: "Completed cases", footAr: "بعد أول جلسة", footEn: "After your first session" },
+  { icon: "target", ar: "متوسط التقييم", en: "Average score", footAr: "بعد التقييم", footEn: "After evaluation" },
+  { icon: "clock", ar: "وقت التدريب", en: "Practice time", footAr: "بعد تتبع الجلسات", footEn: "After session tracking" },
+] as const;
+
+function ProgressRing({value, index}:{value:number|null; index:number}) {
+  const safeValue = value === null ? 0 : Math.max(0, Math.min(100, value));
+  return <div className="ydash-progress-ring" role="img" aria-label={value === null ? "No progress data yet" : `${safeValue}%`} style={{"--ring-target":safeValue} as CSSProperties}>
+    <svg viewBox="0 0 112 112" aria-hidden="true"><circle className="ydash-ring-track" cx="56" cy="56" r="43"/><circle className="ydash-ring-fill" cx="56" cy="56" r="43" pathLength="100"/></svg>
+    <span className="ydash-ring-value">{value===null?"—":`${safeValue}%`}</span><span className="ydash-ring-index">0{index+1}</span>
+  </div>;
+}
+function useGreeting() {
+  const [greeting, setGreeting] = useState<"welcome" | "morning" | "afternoon" | "evening">("welcome");
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const hour = new Date().getHours();
+      setGreeting(hour >= 5 && hour < 12 ? "morning" : hour >= 12 && hour < 17 ? "afternoon" : "evening");
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  return greeting;
+}
+function FadeSection({children, delay=0, className=""}: {children: ReactNode; delay?:number; className?: string}) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const node = ref.current; if (!node) return;
+    if (!("IntersectionObserver" in window)) { node.classList.add("ydash-visible"); return; }
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) entry.target.classList.toggle("ydash-visible", entry.isIntersecting);
+    }, {threshold: .08});
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  return <section ref={ref} className={`ydash-reveal ${className}`} style={{transitionDelay:`${delay}ms`}}>{children}</section>;
+}
 
 export default function DashboardPage() {
-  const steps = [
-    {
-      number: "01",
-      title: "اختار حالة طبية",
-      description:
-        "استكشف الحالات المتاحة وابدأ سيناريو تدريبي مناسب.",
-    },
-    {
-      number: "02",
-      title: "ابدأ المحاكاة",
-      description:
-        "اسأل المريض، اجمع المعلومات، وحاول توصل للتشخيص.",
-    },
-    {
-      number: "03",
-      title: "راجع أداءك",
-      description:
-        "افهم قراراتك واعرف نقاط القوة والتحسين بعد المحاكاة.",
-    },
-  ];
+  const { locale, name, openSession } = useDashboardUI();
+  const firstName = name.trim().split(/\s+/)[0] || "Doctor";
+  const greeting = useGreeting();
+  const salutation = {
+    welcome: ["أهلاً بيك", "Welcome back"], morning: ["صباح الخير", "Good morning"],
+    afternoon: ["مساء الخير", "Good afternoon"], evening: ["مساء الخير", "Good evening"],
+  }[greeting][locale === "ar" ? 0 : 1];
+  return <div className="ydash-home">
+    <FadeSection className="ydash-intro" delay={25}>
+      <div><div className="ydash-eyebrow"><span className="ydash-pulse-dot"/> WELCOME BACK · YOUR CLINICAL JOURNEY</div><h1>{salutation}، <em>{firstName}</em><span className="ydash-heading-spark">✦</span></h1><p>{translated(locale,"كل حالة بتقرّبك خطوة من التفكير الإكلينيكي بثقة.", "A little more clinical confidence with every case you explore.")}</p></div>
+      <div className="ydash-pills"><span className="ydash-pill"><DashboardIcon name="trophy" size={17}/>{translated(locale,"الترتيب", "Rank")} <strong>—</strong></span><span className="ydash-pill"><DashboardIcon name="zap" size={17}/>{translated(locale,"إجمالي XP", "Total XP")} <strong>—</strong></span></div>
+    </FadeSection>
 
-  return (
-    <div className="space-y-8">
-      {/* Welcome */}
-      <section>
-        <p className="text-sm font-medium text-[#6A8A76]">
-          الصفحة الرئيسية
-        </p>
+    <FadeSection className="ydash-hero ydash-glass" delay={75}>
+      <div className="ydash-hero-content"><span className="ydash-kicker">AI-POWERED CLINICAL SIMULATION</span><h2>{translated(locale,"المريض القادم مستني قرارك.", "Your next patient awaits your decision.")}</h2><p>{translated(locale,"ابدأ رحلتك في التدريب السريري. اختار وضع التدريب، ثم التخصص والحالة المناسبة ليك.", "Step into clinical practice. Pick a mode, choose a specialty and explore your next case.")}</p>
+        <div className="ydash-hero-actions"><button type="button" className="ydash-primary-action" onClick={openSession}><DashboardIcon name="play" size={20}/>{translated(locale,"ابدأ جلسة جديدة", "Start new session")}<DashboardIcon name="arrow" size={17}/></button><Link className="ydash-secondary-action" href="/dashboard/specialties">{translated(locale,"استكشف الحالات", "Explore cases")}<DashboardIcon name="chevron" size={17}/></Link></div>
+      </div><div aria-hidden="true" className="ydash-hero-art"><div className="ydash-hero-ring ring-a"/><div className="ydash-hero-ring ring-b"/><div className="ydash-hero-center"><DashboardIcon name="stethoscope" size={56}/></div><div className="ydash-hero-orbit-dot"/></div>
+    </FadeSection>
 
-        <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-          أهلاً بيك في مساحة تدريبك
-        </h1>
+    <FadeSection className="ydash-section" delay={100}><div className="ydash-section-heading"><div><span className="ydash-small-label">01 / OVERVIEW</span><h2>{translated(locale,"نظرة على رحلتك", "Your progress at a glance")}</h2><p>{translated(locale,"مؤشراتك الحقيقية هتظهر هنا مع بداية الجلسات والتقييم.", "Your real metrics will appear once sessions and evaluations are available.")}</p></div><Link href="/dashboard/analytics" className="ydash-text-link">{translated(locale,"تحليلات أكتر", "More analytics")} <DashboardIcon name="arrow" size={16}/></Link></div>
+      <div className="ydash-stat-grid">{indicators.map((item, index) => <article className="ydash-stat-card ydash-glass" key={item.en} style={{animationDelay:`${index*110}ms`}}><div className="ydash-stat-copy"><span className="ydash-stat-icon"><DashboardIcon name={item.icon} size={20}/></span><h3>{translated(locale,item.ar,item.en)}</h3><p>{translated(locale,item.footAr,item.footEn)}</p></div><ProgressRing value={null} index={index}/></article>)}</div>
+    </FadeSection>
 
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-[#6B8073]">
-          هنا هتتابع رحلتك في التدريب الطبي، وتوصل
-          للحالات والمحاكاة والتقييمات لما نجهزها.
-        </p>
-      </section>
-
-      {/* Main feature */}
-      <section className="relative overflow-hidden rounded-[24px] bg-[#153E32] p-6 text-white sm:p-9">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full border-[45px] border-[#A5CDB0]/10"
-        />
-
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute bottom-0 left-0 h-44 w-64 rounded-full bg-[#8ABC94]/10 blur-3xl"
-        />
-
-        <div className="relative z-10 max-w-[570px]">
-          <span className="inline-flex rounded-full border border-[#C5DFBF]/30 bg-white/10 px-3 py-1.5 text-xs text-[#D5E8D2]">
-            التدريب السريري الذكي
-          </span>
-
-          <h2 className="mt-5 text-[27px] font-bold leading-[1.55] sm:text-4xl">
-            كل حالة جديدة،
-            <span className="block text-[#B6D6A8]">
-              خبرة أقرب للواقع.
-            </span>
-          </h2>
-
-          <p className="mt-4 max-w-[490px] text-sm leading-8 text-[#D5E2D8]">
-            يادوك هيساعدك تتعامل مع حالات طبية تفاعلية،
-            وتتمرن على التفكير السريري واتخاذ القرار
-            في بيئة تعليمية آمنة.
-          </p>
-
-          <div className="mt-7 inline-flex items-center gap-2 rounded-xl border border-[#E1C89B]/30 bg-[#D5B77F]/10 px-4 py-3 text-sm text-[#F0D6A6]">
-            <span className="h-2 w-2 rounded-full bg-[#D5B77F]" />
-            مكتبة الحالات قيد التجهيز
-          </div>
-        </div>
-      </section>
-
-      {/* Training flow */}
-      <section className="space-y-5">
-        <div>
-          <h2 className="text-xl font-bold">
-            إزاي هتشتغل المحاكاة؟
-          </h2>
-
-          <p className="mt-2 text-sm text-[#718777]">
-            دي المراحل الأساسية لتجربة التدريب اللي بنجهزها.
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {steps.map((step) => (
-            <article
-              key={step.number}
-              className="rounded-2xl border border-[#E0E8E0] bg-white p-6 shadow-sm"
-            >
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#ECF3EB] text-sm font-bold text-[#397253]">
-                {step.number}
-              </span>
-
-              <h3 className="mt-5 text-base font-bold">
-                {step.title}
-              </h3>
-
-              <p className="mt-3 text-sm leading-7 text-[#708376]">
-                {step.description}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Current status */}
-      <section className="flex flex-col gap-4 rounded-2xl border border-[#E3E7DD] bg-[#EEEEE5] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-        <div>
-          <h2 className="font-bold text-[#294D3C]">
-            حسابك جاهز
-          </h2>
-
-          <p className="mt-2 text-sm leading-7 text-[#718174]">
-            تقدر تدخل إلى المنصة بأمان. الخطوة التالية
-            هي تجهيز مكتبة الحالات وربطها بالمحاكاة.
-          </p>
-        </div>
-
-        <span className="shrink-0 self-start rounded-full bg-[#DAE8D9] px-4 py-2 text-xs font-semibold text-[#356B47]">
-          المرحلة الحالية
-        </span>
-      </section>
+    <div className="ydash-bottom-grid">
+      <FadeSection className="ydash-challenge ydash-glass" delay={130}><div className="ydash-card-head"><span className="ydash-small-label">02 / YOUR NEXT MOVE</span><span className="ydash-mini-emblem"><DashboardIcon name="zap" size={20}/></span></div><h2>{translated(locale,"التحدي المقترح", "Suggested challenge")}</h2><div className="ydash-challenge-visual" aria-hidden="true"><DashboardIcon name="target" size={47}/><span>✦</span></div><h3>{translated(locale,"تحديك الجاي بيتجهّز", "Your next challenge is on its way")}</h3><p>{translated(locale,"لما نظام التحديات يجهز، هتلاقي تحديات مناسبة لمستواك وجوايزها هنا.", "Personalized challenges and their rewards will appear here when the challenge system launches.")}</p><div className="ydash-challenge-footer"><span><DashboardIcon name="zap" size={16}/> {translated(locale,"المكافأة: لسه متحددتش", "Reward: not defined yet")}</span><Link href="/dashboard/challenges" className="ydash-text-link">{translated(locale,"التحديات", "Challenges")} <DashboardIcon name="chevron" size={15}/></Link></div></FadeSection>
+      <FadeSection className="ydash-leaderboard ydash-glass" delay={180}><div className="ydash-card-head"><span className="ydash-small-label">03 / THE COMMUNITY</span><span className="ydash-mini-emblem"><DashboardIcon name="trophy" size={20}/></span></div><h2>{translated(locale,"لوحة المتصدرين", "Leaderboard")}</h2><p className="ydash-muted">{translated(locale,"ترتيبك هيتحدّث من الداتا الفعلية لما نظام XP يجهز.", "Rankings will update from real XP data once the points system is implemented.")}</p><div className="ydash-my-rank"><div className="ydash-rank-avatar">{Array.from(name)[0] || "Y"}</div><div><strong>{firstName}</strong><small>{translated(locale,"ترتيبك الحالي", "Your rank")}</small></div><span>—</span></div><div className="ydash-ranking-empty"><DashboardIcon name="trophy" size={31}/><strong>{translated(locale,"مفيش ترتيب متاح حاليًا", "No rankings yet")}</strong><span>{translated(locale,"هنا هيظهر جزء من الترتيب بشكل مباشر بعد تفعيل الـ Leaderboard.", "Live standings will appear here when the leaderboard service is connected.")}</span></div><Link href="/dashboard/leaderboard" className="ydash-outline-action">{translated(locale,"عرض القائمة الكاملة", "View full leaderboard")} <DashboardIcon name="arrow" size={16}/></Link></FadeSection>
     </div>
-  );
+  </div>;
 }
