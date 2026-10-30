@@ -278,6 +278,13 @@ def advance_phase(
         requested_phase,
     )
 
+    if next_phase == SimulationPhase.COMPLETED and (
+        not session.diagnosis or not session.treatment_plan
+    ):
+        raise SimulationError(
+            "Submit a diagnosis and treatment plan before completion."
+        )
+
     session.current_phase = next_phase
 
     if requested_phase == SimulationPhase.COMPLETED:

@@ -291,3 +291,15 @@ def test_invalid_transition_does_not_record_transition_event():
 
     assert len(session.events) == initial_event_count
     assert session.current_phase == SimulationPhase.INTRODUCTION
+
+def test_cannot_bypass_diagnosis_with_direct_phase_transition():
+    session = make_test_session()
+    move_to_phase(session, SimulationPhase.DIAGNOSIS_AND_PLAN)
+    initial_events = len(session.events)
+
+    with pytest.raises(SimulationError):
+        advance_phase(session, SimulationPhase.COMPLETED)
+
+    assert session.current_phase == SimulationPhase.DIAGNOSIS_AND_PLAN
+    assert session.is_completed is False
+    assert len(session.events) == initial_events
