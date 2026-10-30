@@ -1,5 +1,5 @@
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from uuid import UUID
@@ -41,7 +41,7 @@ simulation_service = SimulationService()
 
 
 from functools import lru_cache
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 
@@ -151,6 +151,7 @@ CurrentUser = Annotated[dict[str, Any], Depends(get_current_user)]
 
 
 class CreateSessionRequest(BaseModel):
+    mode: Literal["training", "test"] = "training"
     case_data: dict[str, Any] = Field(
         ...,
         description="Medical case data supplied by the case/blueprint module.",
@@ -279,6 +280,24 @@ def handle_simulation_error(exc: Exception) -> None:
     raise exc
 
 
+@router.get("/demo-ready")
+def demo_ready(user: CurrentUser):
+    """Require authenticated, isolated PostgreSQL demo mode."""
+    if (
+        settings.app_env != "development"
+        or os.getenv("F03_ALLOW_SYNTHETIC") != "1"
+    ):
+        raise HTTPException(503, "Synthetic demo is disabled.")
+
+    pg = _pg_service()
+    if pg is None:
+        raise HTTPException(
+            503, "F03 requires isolated PostgreSQL storage."
+        )
+
+    return {"ready": True, "storage": "postgres"}
+
+
 @router.post("/sessions", status_code=201)
 def start_simulation(
     payload: CreateSessionRequest,
@@ -296,9 +315,28 @@ def start_simulation(
                 "Case Provider integration required to create sessions.",
             )
         try:
-            return pg.create(
-                str(user["id"]), payload.case_data
-            ).to_dict()
+            # LOCAL TEST DB ONLY: the real authenticated user's
+            # UUID must satisfy the local profiles foreign key.
+            # Never run this path against shared Supabase Cloud.
+            if isinstance(pg, PostgresSimulationService):
+                with pg.session_factory.begin() as db:
+                    db.execute(
+                        text(
+                            "INSERT INTO public.profiles (id) "
+                            "VALUES (:uid) ON CONFLICT (id) DO NOTHING"
+                        ),
+                        {"uid": UUID(str(user["id"]))},
+                    )
+
+            created = pg.create(
+                str(user["id"]),
+                payload.case_data,
+                mode=payload.mode,
+            )
+            return {
+                **created.to_dict(),
+                "mode": created.mode,
+            }
         except SimulationError as exc:
             handle_simulation_error(exc)
     user_id = user.get("id")
@@ -345,9 +383,11 @@ def get_simulation(
 
     if (pg := _pg_service()) is not None:
         try:
-            return pg.load(
-                str(user["id"]), session_id
-            ).to_dict()
+            loaded = pg.load(str(user["id"]), session_id)
+            return {
+                **loaded.to_dict(),
+                "mode": getattr(loaded, "mode", "training"),
+            }
         except (SessionNotFound, ValueError, TypeError) as exc:
             raise HTTPException(
                 404, "Simulation session not found."

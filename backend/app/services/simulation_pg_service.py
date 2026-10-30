@@ -29,7 +29,9 @@ class SessionNotFound(Exception):
 
 
 def _state(session: SimulationSession) -> dict[str, Any]:
-    return SimulationService._session_state(session)
+    state = SimulationService._session_state(session)
+    state["mode"] = getattr(session, "mode", "training")
+    return state
 
 
 def _hydrate(row, events) -> SimulationSession:
@@ -74,6 +76,7 @@ def _hydrate(row, events) -> SimulationSession:
             )
         )
 
+    session.mode = state.get("mode", "training")
     return session
 
 
@@ -125,8 +128,12 @@ class PostgresSimulationService:
         user_id: str,
         case_data: dict,
         case_version_id: str | None = None,
+        mode: str = "training",
     ) -> SimulationSession:
+        if mode not in ("training", "test"):
+            raise ValueError("Invalid simulation mode.")
         session = create_session(deepcopy(case_data))
+        session.mode = mode
 
         with self.session_factory.begin() as db:
             row = SimulationSessionModel(
