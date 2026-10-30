@@ -339,7 +339,7 @@ export default function SimulationPreview() {
         </div>
       </header>
 
-      
+
       <aside
         className={`${styles.glass} ${styles.toolRail} ${
           toolsOpen ? "ydokpreview_railExpanded" : ""
