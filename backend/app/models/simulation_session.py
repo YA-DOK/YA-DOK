@@ -46,6 +46,13 @@ class SimulationSessionModel(Base):
         nullable=False,
     )
 
+    state_json: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'::jsonb"),
+    )
+
     current_phase: Mapped[str] = mapped_column(
         String(40),
         nullable=False,

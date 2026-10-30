@@ -9,6 +9,7 @@ from app.core.database import Base
 from app.models.profile import Profile  # noqa: F401
 from app.models.simulation_session import SimulationSessionModel
 from app.models.simulation_event import SimulationEventModel
+from app.models.simulation_action_request import SimulationActionRequestModel
 
 config = context.config
 

@@ -125,12 +125,12 @@ def upgrade() -> None:
 
     op.execute(
         "ALTER TABLE public.simulation_events "
-        "DISABLE ROW LEVEL SECURITY"
+        "ENABLE ROW LEVEL SECURITY"
     )
 
     op.execute(
         "ALTER TABLE public.simulation_sessions "
-        "DISABLE ROW LEVEL SECURITY"
+        "ENABLE ROW LEVEL SECURITY"
     )
 
 def downgrade() -> None:
@@ -149,13 +149,3 @@ def downgrade() -> None:
         table_name="simulation_sessions",
     )
     op.drop_table("simulation_sessions")
-
-    op.execute(
-        "ALTER TABLE public.simulation_sessions "
-        "ENABLE ROW LEVEL SECURITY"
-    )
-
-    op.execute(
-        "ALTER TABLE public.simulation_events "
-        "ENABLE ROW LEVEL SECURITY"
-    )

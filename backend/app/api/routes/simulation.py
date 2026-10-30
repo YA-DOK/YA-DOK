@@ -1,12 +1,17 @@
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from uuid import UUID
+import os
 from pydantic import BaseModel, Field
 
 from app.ai.llm.openrouter import OpenRouterProvider
 from app.core.security import get_current_user
 from app.services.simulation_service import SimulationService
+from app.services.simulation_pg_service import PostgresSimulationService, SessionNotFound
+from app.simulation.action_request import IdempotencyConflict
+from app.core.config import settings
 from app.simulation.engine import (
     InvalidPhaseTransition,
     SimulationError,
@@ -33,6 +38,114 @@ sessions: dict[str, SimulationSession] = {}
 session_owners: dict[str, str] = {}
 
 simulation_service = SimulationService()
+
+
+from functools import lru_cache
+from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
+from sqlalchemy.orm import sessionmaker
+
+
+@lru_cache(maxsize=1)
+def _isolated_pg_factory():
+    raw_url = os.getenv("F03_TEST_DATABASE_URL", "").strip()
+
+    if not raw_url:
+        raise HTTPException(
+            503, "F03_TEST_DATABASE_URL is required."
+        )
+
+    try:
+        url = make_url(raw_url)
+    except Exception as exc:
+        raise HTTPException(
+            503, "Invalid isolated PostgreSQL URL."
+        ) from exc
+
+    if (
+        url.get_backend_name() != "postgresql"
+        or url.host not in {"localhost", "127.0.0.1", "::1"}
+        or url.database in {None, "postgres", "template0", "template1"}
+    ):
+        raise HTTPException(
+            503,
+            "F03 requires a dedicated local PostgreSQL test database.",
+        )
+
+    engine = create_engine(raw_url, pool_pre_ping=True)
+
+    return sessionmaker(
+        bind=engine,
+        autoflush=False,
+        expire_on_commit=False,
+    )
+
+
+def _pg_service():
+    if os.getenv("YA_DOK_F03_STORAGE") != "postgres":
+        if settings.app_env != "development":
+            raise HTTPException(
+                503,
+                "Legacy simulation storage is disabled outside development.",
+            )
+        return None
+
+    return PostgresSimulationService(_isolated_pg_factory())
+
+
+def _pg_action(user, session_id, request, action, payload, handler):
+    service = _pg_service()
+    key = request.headers.get("Idempotency-Key")
+
+    if not key:
+        raise HTTPException(400, "Idempotency-Key header is required.")
+
+    try:
+        UUID(key)
+        UUID(str(session_id))
+        UUID(str(user.get("id")))
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise HTTPException(422, "Invalid request, session or user ID.") from exc
+
+    try:
+        return service.apply_action(
+            user_id=str(user["id"]),
+            session_id=session_id,
+            request_id=key,
+            action=action,
+            payload=payload,
+            handler=handler,
+        )
+    except SessionNotFound as exc:
+        raise HTTPException(404, "Simulation session not found.") from exc
+    except IdempotencyConflict as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except (InvalidPhaseTransition, SimulationError) as exc:
+        handle_simulation_error(exc)
+
+
+def _pg_change_phase(session, phase):
+    advance_phase(session, phase)
+    return session.to_dict()
+
+
+def _pg_examination(session, name):
+    result = request_examination(session, name)
+    return {"session_id": session.session_id, **result}
+
+
+def _pg_investigation(session, name):
+    result = request_investigation(session, name)
+    return {"session_id": session.session_id, **result}
+
+
+def _pg_diagnosis(session, diagnosis, treatment_plan):
+    result = submit_diagnosis_and_plan(
+        session, diagnosis, treatment_plan
+    )
+    return {"session_id": session.session_id, **result}
+
+
 
 CurrentUser = Annotated[dict[str, Any], Depends(get_current_user)]
 
@@ -172,6 +285,22 @@ def start_simulation(
     user: CurrentUser,
 ):
     """Create a simulation owned by the authenticated user."""
+
+    if (pg := _pg_service()) is not None:
+        if (
+            settings.app_env != "development"
+            or os.getenv("F03_ALLOW_SYNTHETIC") != "1"
+        ):
+            raise HTTPException(
+                503,
+                "Case Provider integration required to create sessions.",
+            )
+        try:
+            return pg.create(
+                str(user["id"]), payload.case_data
+            ).to_dict()
+        except SimulationError as exc:
+            handle_simulation_error(exc)
     user_id = user.get("id")
 
     if not user_id:
@@ -213,6 +342,16 @@ def get_simulation(
     user: CurrentUser,
 ):
     """Get a session only if it belongs to the authenticated user."""
+
+    if (pg := _pg_service()) is not None:
+        try:
+            return pg.load(
+                str(user["id"]), session_id
+            ).to_dict()
+        except (SessionNotFound, ValueError, TypeError) as exc:
+            raise HTTPException(
+                404, "Simulation session not found."
+            ) from exc
     session = get_owned_session(session_id, user)
     return session.to_dict()
 
@@ -222,8 +361,16 @@ def change_phase(
     session_id: str,
     payload: PhaseRequest,
     user: CurrentUser,
+    request: Request,
 ):
     """Advance the simulation to the next valid phase."""
+
+    if _pg_service() is not None:
+        return _pg_action(
+            user, session_id, request, "phase",
+            {"phase": payload.phase.value},
+            lambda s: _pg_change_phase(s, payload.phase),
+        )
     session = get_owned_session(session_id, user)
 
     try:
@@ -239,8 +386,15 @@ def change_phase(
 def pause_simulation(
     session_id: str,
     user: CurrentUser,
+    request: Request,
 ):
     """Pause a simulation owned by the authenticated user."""
+
+    if _pg_service() is not None:
+        return _pg_action(
+            user, session_id, request, "pause", {},
+            pause_session,
+        )
     session = get_owned_session(session_id, user)
 
     try:
@@ -256,8 +410,15 @@ def pause_simulation(
 def resume_simulation(
     session_id: str,
     user: CurrentUser,
+    request: Request,
 ):
     """Resume a paused simulation owned by the authenticated user."""
+
+    if _pg_service() is not None:
+        return _pg_action(
+            user, session_id, request, "resume", {},
+            resume_session,
+        )
     session = get_owned_session(session_id, user)
 
     try:
@@ -276,6 +437,12 @@ async def ask_patient(
     user: CurrentUser,
 ):
     """Ask the simulated patient a question."""
+
+    if _pg_service() is not None:
+        raise HTTPException(
+            501,
+            "Patient Agent PostgreSQL integration belongs to F04.",
+        )
     session = get_owned_session(session_id, user)
 
     try:
@@ -316,8 +483,16 @@ def get_examination(
     session_id: str,
     payload: ExaminationRequest,
     user: CurrentUser,
+    request: Request,
 ):
     """Request examination findings from the supplied case."""
+
+    if _pg_service() is not None:
+        return _pg_action(
+            user, session_id, request, "examination",
+            {"examination_name": payload.examination_name},
+            lambda s: _pg_examination(s, payload.examination_name),
+        )
     session = get_owned_session(session_id, user)
 
     try:
@@ -337,8 +512,16 @@ def get_investigation(
     session_id: str,
     payload: InvestigationRequest,
     user: CurrentUser,
+    request: Request,
 ):
     """Request investigation results from the supplied case."""
+
+    if _pg_service() is not None:
+        return _pg_action(
+            user, session_id, request, "investigation",
+            {"investigation_name": payload.investigation_name},
+            lambda s: _pg_investigation(s, payload.investigation_name),
+        )
     session = get_owned_session(session_id, user)
 
     try:
@@ -358,8 +541,21 @@ def submit_diagnosis(
     session_id: str,
     payload: DiagnosisRequest,
     user: CurrentUser,
+    request: Request,
 ):
     """Submit the student's diagnosis and treatment plan."""
+
+    if _pg_service() is not None:
+        return _pg_action(
+            user, session_id, request, "diagnosis",
+            {
+                "diagnosis": payload.diagnosis,
+                "treatment_plan": payload.treatment_plan,
+            },
+            lambda s: _pg_diagnosis(
+                s, payload.diagnosis, payload.treatment_plan
+            ),
+        )
     session = get_owned_session(session_id, user)
 
     try:
@@ -379,8 +575,15 @@ def submit_diagnosis(
 def finish_simulation(
     session_id: str,
     user: CurrentUser,
+    request: Request,
 ):
     """Complete the simulation after diagnosis and treatment plan."""
+
+    if _pg_service() is not None:
+        return _pg_action(
+            user, session_id, request, "complete", {},
+            complete_session,
+        )
     session = get_owned_session(session_id, user)
 
     try:
