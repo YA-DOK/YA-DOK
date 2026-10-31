@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getAccessToken } from "@/lib/supabase/client";
 import { translated, useDashboardUI } from "./dashboard-ui";
 
@@ -75,6 +76,15 @@ export function SessionHistory() {
         </div>
         <p style={{ margin: 0 }}>{item.mode === "test" ? "Assessment" : "Training"} · {dateText(item.created_at)}</p>
         {item.diagnosis && <p style={{ margin: 0, overflowWrap: "anywhere" }}>{translated(locale, "التشخيص", "Diagnosis")}: {item.diagnosis}</p>}
+        {!item.is_completed && item.case_code && (
+          <Link
+            href={`/simulation/preview?case=${encodeURIComponent(item.case_code)}&mode=${item.mode === "test" ? "test" : "training"}&resume=${encodeURIComponent(item.session_id)}`}
+            className="ydash-outline-action"
+            style={{ justifySelf: "start", display: "inline-flex" }}
+          >
+            {translated(locale, "استكمال الجلسة", "Resume session")}
+          </Link>
+        )}
         <small style={{ opacity: 0.7 }}>Session: {item.session_id}</small>
       </article>)}
     </div>

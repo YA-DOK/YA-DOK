@@ -89,6 +89,13 @@ export function useF03Session() {
           params.get("mode") === "test" ? "test" : "training";
         // Starting from the Case Library is a NEW attempt. Refresh is a resume.
         const newAttempt = params.get("new") === "1";
+        const requestedResumeId = params.get("resume");
+        if (
+          requestedResumeId !== null &&
+          (newAttempt || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(requestedResumeId))
+        ) {
+          throw new Error("Invalid Resume link. Open Session History and try again.");
+        }
 
         const caseCode = params.get("case") ?? "";
         if (!/^[A-Za-z0-9_-]{3,120}$/.test(caseCode)) {
@@ -108,7 +115,8 @@ export function useF03Session() {
         storageKey.current = key;
 
         let loaded: F03Session | null = null;
-        const savedId = newAttempt ? null : sessionStorage.getItem(key);
+        // Explicit Resume overrides the browser's last-session cache.
+        const savedId = requestedResumeId ?? (newAttempt ? null : sessionStorage.getItem(key));
 
         if (savedId) {
           try {
@@ -119,11 +127,21 @@ export function useF03Session() {
               loaded.is_completed ||
               !loaded.case_version_id
             ) {
+              if (requestedResumeId !== null) {
+                throw new Error(
+                  loaded.is_completed
+                    ? "This attempt has ended. Start a new attempt from the Case Library."
+                    : "This Resume link does not match the saved case or mode."
+                );
+              }
               loaded = null;
               sessionStorage.removeItem(key);
             }
           } catch (err) {
-            if (!(err instanceof F03HttpError) || err.status !== 404) {
+            if (
+              requestedResumeId !== null ||
+              !(err instanceof F03HttpError) || err.status !== 404
+            ) {
               throw err;
             }
             sessionStorage.removeItem(key);
@@ -132,7 +150,8 @@ export function useF03Session() {
 
         const current = loaded ?? await f03Live.startPublished(caseCode, selected);
 
-        if (!loaded) sessionStorage.setItem(key, current.session_id);
+        // Cache the explicit Resume ID as the latest active attempt in this tab.
+        sessionStorage.setItem(key, current.session_id);
 
         // Do not create another attempt when the student refreshes this URL.
         if (newAttempt) {
@@ -259,7 +278,11 @@ export function useF03Session() {
     if (storageKey.current) {
       sessionStorage.removeItem(storageKey.current);
     }
-    window.location.reload();
+    // "Try Again" must not reopen the same pinned Resume ID.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("resume");
+    url.searchParams.set("new", "1");
+    window.location.assign(url.toString());
   }
 
   const currentPhase = session?.current_phase ?? "introduction";
