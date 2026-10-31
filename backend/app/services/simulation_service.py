@@ -195,7 +195,7 @@ class SimulationService:
             timestamp_text = item.get("created_at")
             timestamp = (
                 datetime.fromisoformat(
-                    timestamp_text.replace("Z", "+00:00")
+                    timestamp_text
                 )
                 if timestamp_text
                 else datetime.now().astimezone()

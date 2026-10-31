@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.case import ClinicalCase, CaseVersion
+from app.models.case import CaseVersion, ClinicalCase
 from app.schemas.case_blueprint import CaseBlueprintV32
 
 

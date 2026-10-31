@@ -1,9 +1,9 @@
 
 from uuid import uuid4
 
-from app.simulation.local_store import LocalSimulationStore
 from app.services.simulation_service import SimulationService
 from app.simulation.engine import SimulationSession
+from app.simulation.local_store import LocalSimulationStore
 
 
 def test_persist_and_retrieve_engine_session(tmp_path):

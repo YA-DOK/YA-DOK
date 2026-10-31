@@ -6,7 +6,7 @@ version. This code cannot certify medical accuracy or reviewer identity.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from pydantic import ValidationError
 from sqlalchemy import select
@@ -124,7 +124,7 @@ def publish_case_version(db: Session, case_code: str, version_number: int) -> Li
     unchanged = case.published_version_number == version_number and version.published_at is not None
     if not unchanged:
         if version.published_at is None:
-            version.published_at = datetime.now(timezone.utc)
+            version.published_at = datetime.now(UTC)
         case.published_version_number = version_number
     return _result(case, unchanged=unchanged)
 
@@ -133,7 +133,7 @@ def archive_case(db: Session, case_code: str) -> LifecycleResult:
     case = _locked_case(db, case_code)
     unchanged = case.archived_at is not None
     if not unchanged:
-        case.archived_at = datetime.now(timezone.utc)
+        case.archived_at = datetime.now(UTC)
     # Preserve the pointer, all versions, and session references.
     return _result(case, unchanged=unchanged)
 

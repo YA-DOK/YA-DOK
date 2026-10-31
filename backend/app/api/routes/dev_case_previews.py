@@ -16,7 +16,6 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.case import CaseVersion, ClinicalCase
-from app.api.routes.student_cases import StudentCasePage, StudentCaseSummary
 
 router = APIRouter(prefix="/dev/cases", tags=["Local Draft Previews (Development Only)"], dependencies=[Depends(get_current_user)])
 
@@ -24,7 +23,7 @@ router = APIRouter(prefix="/dev/cases", tags=["Local Draft Previews (Development
 def _only_local_db() -> None:
     try:
         host = make_url(settings.database_url).host
-    except Exception:
+    except Exception:  # noqa: BLE001
         host = None
     if settings.app_env != "local" or host not in ("localhost", "127.0.0.1", "::1"):
         raise HTTPException(status_code=404, detail="Not found")

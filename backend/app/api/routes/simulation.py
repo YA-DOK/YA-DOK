@@ -1,17 +1,20 @@
 
+import os
 from typing import Annotated, Any, Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from uuid import UUID
-import os
 from pydantic import BaseModel, Field
 
 from app.ai.llm.openrouter import OpenRouterProvider
-from app.core.security import get_current_user
-from app.services.simulation_service import SimulationService
-from app.services.simulation_pg_service import PostgresSimulationService, SessionNotFound
-from app.simulation.action_request import IdempotencyConflict
 from app.core.config import settings
+from app.core.security import get_current_user
+from app.services.simulation_pg_service import (
+    PostgresSimulationService,
+    SessionNotFound,
+)
+from app.services.simulation_service import SimulationService
+from app.simulation.action_request import IdempotencyConflict
 from app.simulation.engine import (
     InvalidPhaseTransition,
     SimulationError,
@@ -29,7 +32,6 @@ from app.simulation.engine import (
 )
 from app.simulation.patient_agent import PatientAgent
 
-
 router = APIRouter(prefix="/simulation", tags=["Simulation"])
 
 # Keep in-memory storage for compatibility and fast access.
@@ -41,6 +43,7 @@ simulation_service = SimulationService()
 
 
 from functools import lru_cache
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker

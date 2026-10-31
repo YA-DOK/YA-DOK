@@ -5,7 +5,6 @@ This is an engineering validator, NOT a medical correctness validator.
 """
 from __future__ import annotations
 
-import re
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator

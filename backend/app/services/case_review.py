@@ -17,7 +17,12 @@ from sqlalchemy.orm import Session
 from app.models.case import CaseVersion, ClinicalCase
 from app.models.case_review import CaseReviewApproval
 from app.schemas.case_blueprint import CaseBlueprintV32, publication_issues
-from app.services.case_lifecycle import CaseArchived, CaseNotFound, PublicationBlocked, _public_metadata_issues
+from app.services.case_lifecycle import (
+    CaseArchived,
+    CaseNotFound,
+    PublicationBlocked,
+    _public_metadata_issues,
+)
 
 
 def blueprint_hash(payload: dict) -> str:

@@ -1,19 +1,20 @@
 """Structural/security regression tests for F02 closeout; no network or real DB."""
-from uuid import uuid4
 from copy import deepcopy
+from uuid import uuid4
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from app.api.routes.case_approval import router as approval_router
+
 from app.api.routes.admin_case_library import router as admin_router
+from app.api.routes.case_approval import router as approval_router
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.case import ClinicalCase, CaseVersion
-from app.models.profile import Profile
-from app.services.case_review import blueprint_hash, clinician_is_allowed
-from app.services.case_lifecycle import PublicationBlocked, publish_case_version
+from app.models.case import CaseVersion, ClinicalCase
 from app.models.case_review import CaseReviewApproval
+from app.models.profile import Profile
 from app.schemas.case_blueprint import CaseBlueprintV32
+from app.services.case_lifecycle import PublicationBlocked, publish_case_version
+from app.services.case_review import blueprint_hash, clinician_is_allowed
 
 UID=str(uuid4())
 
@@ -102,9 +103,9 @@ def test_model_snapshot_review_is_version_scoped():
 
 
 def test_approved_snapshot_creates_immutable_new_version_and_audit():
+    from app.models.case_review import CaseReviewApproval
     from app.services.case_review import approve_new_snapshot
     from tests.test_case_lifecycle_api import approved_blueprint
-    from app.models.case_review import CaseReviewApproval
     old = approved_blueprint()
     old["meta"]["review_status"] = "draft"
     class ReviewDB:

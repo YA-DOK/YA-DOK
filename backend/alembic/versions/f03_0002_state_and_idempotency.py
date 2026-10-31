@@ -1,8 +1,9 @@
 ﻿"""Add complete simulation state and idempotent requests."""
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "f03_0002"
 down_revision = "c3f8a91d2b70"

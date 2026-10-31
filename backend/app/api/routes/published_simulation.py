@@ -2,19 +2,17 @@
 from __future__ import annotations
 
 import os
-from copy import deepcopy
 from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, ValidationError
-from sqlalchemy import select, text
-from sqlalchemy.engine import make_url
+from sqlalchemy import select
 
 from app.api.routes.simulation import _pg_service
 from app.core.config import settings
 from app.core.security import get_current_user
-from app.models.case import ClinicalCase, CaseVersion
+from app.models.case import CaseVersion, ClinicalCase
 from app.models.case_review import CaseReviewApproval
 from app.models.profile import Profile
 from app.models.simulation_session import SimulationSessionModel

@@ -8,10 +8,10 @@ from app.api.routes import dev_case_previews as preview
 
 
 def test_anonymized_synthetic_metadata_is_allowlisted():
-    row = dict(case_id="SYN-PED-001", version_number=1, anonymized="true",
-               title="Child With Cough", subtitle="Synthetic", short_brief="A fictional child.",
-               specialty="Pediatrics", setting="Clinic", difficulty="beginner",
-               duration_text="12", ground_truth={"diagnosis": "PRIVATE"})
+    row = {"case_id": "SYN-PED-001", "version_number": 1, "anonymized": "true",
+               "title": "Child With Cough", "subtitle": "Synthetic", "short_brief": "A fictional child.",
+               "specialty": "Pediatrics", "setting": "Clinic", "difficulty": "beginner",
+               "duration_text": "12", "ground_truth": {"diagnosis": "PRIVATE"}}
     result = preview._safe_preview(row)
     assert result["title"] == "Child With Cough"
     assert result["demo"] is True
@@ -21,10 +21,10 @@ def test_anonymized_synthetic_metadata_is_allowlisted():
 
 
 def test_non_anonymized_cases_have_all_source_metadata_masked():
-    row = dict(case_id="PED-RT-0002", version_number=1, anonymized="false",
-               title="Private clinical story", subtitle="private subtitle",
-               short_brief="PATIENT DETAILS", specialty="Pediatrics",
-               setting="Patient Hospital", difficulty="intermediate", duration_text="20")
+    row = {"case_id": "PED-RT-0002", "version_number": 1, "anonymized": "false",
+               "title": "Private clinical story", "subtitle": "private subtitle",
+               "short_brief": "PATIENT DETAILS", "specialty": "Pediatrics",
+               "setting": "Patient Hospital", "difficulty": "intermediate", "duration_text": "20"}
     result = preview._safe_preview(row)
     assert result["restricted"] is True
     assert result["title"] != row["title"]

@@ -1,10 +1,11 @@
 from uuid import uuid4
+
 import pytest
 
 from app.simulation.action_request import (
     IdempotencyConflict,
-    create_action_identity,
     classify_request,
+    create_action_identity,
 )
 
 

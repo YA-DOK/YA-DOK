@@ -1,10 +1,10 @@
 """Metadata-only tests: they do not require or modify any running database."""
 from sqlalchemy import ForeignKeyConstraint, UniqueConstraint
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.schema import CreateTable
-from sqlalchemy.dialects import postgresql
 
-from app.models.case import ClinicalCase, CaseVersion, CaseAsset
+from app.models.case import CaseAsset, CaseVersion, ClinicalCase
 
 
 def test_three_storage_models_use_same_metadata():

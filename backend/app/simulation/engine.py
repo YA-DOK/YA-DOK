@@ -1,10 +1,11 @@
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Any, Callable
-from uuid import uuid4
 import json
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
+from uuid import uuid4
 
 
 class SimulationPhase(str, Enum):
@@ -64,7 +65,7 @@ def transition_phase(
 
 def utc_now() -> datetime:
     """Return the current timezone-aware UTC time."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass

@@ -1,12 +1,14 @@
 """Run from backend/: python -m pytest tests/test_case_blueprint_contract.py -q"""
 from copy import deepcopy
-from pathlib import Path
-import json
 
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.case_blueprint import CaseBlueprintV32, publication_issues, student_case_summary
+from app.schemas.case_blueprint import (
+    CaseBlueprintV32,
+    publication_issues,
+    student_case_summary,
+)
 
 
 @pytest.fixture

@@ -5,7 +5,6 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
 from app.api.routes.cases import router
 from app.core.database import get_db

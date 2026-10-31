@@ -2,13 +2,14 @@
 import Link from "next/link";
 import { useF03Session } from "@/lib/simulation/use-f03-session";
 import { createClient } from "@/lib/supabase/client";
+import { useF04PatientChat } from "@/lib/simulation/use-f04-patient-chat";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity, ClipboardList, FlaskConical, HeartPulse,
   Image as ImageIcon, Lightbulb, Menu, MessageCircle,
   Mic, Pause, Play, Send, Stethoscope, Thermometer,
-  UserRound, X, Clock3, Keyboard, ChevronRight,
+  UserRound, X, Clock3, ChevronRight,
   Volume2, CheckCircle2, GraduationCap, ClipboardCheck, LayoutDashboard,
 } from "lucide-react";
 const styles = {
@@ -96,7 +97,7 @@ const styles = {
 type ToolId = "investigations" | "imaging" | "examination" | "vitals" | "notes";
 type ChatMessage = {
   id: number;
-  role: "student" | "system";
+  role: "student" | "patient";
   text: string;
   time: string;
 };
@@ -148,6 +149,17 @@ export default function SimulationPreview() {
   const [sceneLoaded, setSceneLoaded] = useState(false);
   const [diagnosisText, setDiagnosisText] = useState("");
   const [planText, setPlanText] = useState("");
+
+  // F04_PREVIEW_CHAT_V07: patient chat belongs to the current F03 session.
+  const sessionId = liveSession?.session_id;
+  const patientChat = useF04PatientChat(sessionId);
+  const chatTailRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (chatOpen) chatTailRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [chatOpen, patientChat.messages.length]);
+  const canChat = Boolean(liveSession) && currentPhase === "history_taking" && !paused && !ended && !busy;
+  // F04_SCENE_CHAT_V08: the drawer is history-only; compose in the clinic dock.
+  const latestPatientReply = [...patientChat.messages].reverse().find((item) => item.role === "patient")?.content;
 
 
   const studentInitials = studentName
@@ -209,26 +221,22 @@ export default function SimulationPreview() {
   }
 
 
-  const displayMessages: ChatMessage[] = [
-    ...(liveSession?.messages ?? [])
-      .filter(
-        (message) =>
-          message.role !== "system" ||
-          ["examination_result", "investigation_result"].includes(
-            message.action
-          )
-      )
-      .map((message, index) => ({
-        id: -(index + 1),
-        role: message.role === "user" ? "student" as const : "system" as const,
-        text: message.content,
-        time: "Saved",
-      })),
-  ];
+  const displayMessages: ChatMessage[] = patientChat.messages.map((message, index) => ({
+    id: index,
+    role: message.role,
+    text: message.content,
+    time: "Saved",
+  }));
+
+  function openPatientChat() {
+    setChatOpen(true);
+    if (sessionId) void patientChat.retryRefresh();
+  }
 
   return (
     <main className={styles.root}>
       <link rel="stylesheet" href="/simulation/preview-ui.css" />
+      <link rel="stylesheet" href="/simulation/f04-inline-chat-v08.css" />
       <div className={styles.environment} aria-hidden="true">
         <div className={styles.fallback}>
           <div className={styles.poster}>YA-DOK<br /><span>CARE · LEARN · GROW</span></div>
@@ -416,24 +424,63 @@ export default function SimulationPreview() {
         <p className={styles.vitalsDisclaimer}>Readings are unavailable until clinical examination is connected.</p>
       </section>
 
-      <footer className={`${styles.glass} ${styles.dock}`}>
+      {!chatOpen && currentPhase === "history_taking" && (patientChat.sending || latestPatientReply) && (
+        <div className="f04v08-scene-reply" aria-live="polite" aria-atomic="true">
+          <div className="f04v08-reply-heading">
+            <MessageCircle size={15} /> {patientChat.sending ? "Patient is responding..." : "Patient"}
+          </div>
+          <p dir="auto">{patientChat.sending ? "بيفكر في الرد..." : latestPatientReply}</p>
+        </div>
+      )}
+      {!chatOpen && patientChat.error && (
+        <div className="f04v08-scene-error" role="alert">
+          {patientChat.error}
+          <button type="button" onClick={() => void patientChat.retryRefresh()} aria-label="Reload chat history">Retry</button>
+        </div>
+      )}
+
+      <footer className={`${styles.glass} ${styles.dock} f04v08-dock`}>
         <button className={styles.dockButton} onClick={() => void runAction(paused ? "resume" : "pause")}
           disabled={!liveSession || busy || ended}>
           {paused ? <Play size={18} /> : <Pause size={18} />}
           <span>{paused ? "Resume" : "Pause"}</span>
         </button>
 
-        <button className={styles.dockButton} onClick={() => setChatOpen(true)}>
+        <button type="button" className={`${styles.dockButton} f04v08-history-button`} onClick={openPatientChat}>
           <MessageCircle size={18} />
           <span>Chat History</span>
         </button>
 
-        <button type="button" className={styles.voiceButton} disabled title="Voice interaction is not available">
-          <span className={styles.micCircle}><Mic size={22} /></span>
-          <span className={styles.waveform}>▂▆█▃▇▅▂</span>
-          <span className={styles.voiceText}>Voice interaction unavailable</span>
-          <Keyboard size={17} className={styles.keyboardIcon} />
-        </button>
+        <form
+          className={`${styles.voiceButton} f04v08-dock-form`}
+          aria-label="Message the virtual patient"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void patientChat.send(canChat);
+          }}
+        >
+          <span className={styles.micCircle} title="Voice interaction is not available yet"><Mic size={22} /></span>
+          <input
+            className="f04v08-dock-input"
+            aria-label="Type your question to the patient"
+            dir="auto"
+            placeholder={canChat ? "اكتب سؤالك للمريض هنا..." : "المحادثة متاحة أثناء أخذ التاريخ المرضي"}
+            value={patientChat.draft}
+            onChange={(event) => patientChat.setDraft(event.target.value)}
+            autoComplete="off"
+            maxLength={1000}
+            disabled={!canChat || patientChat.sending}
+          />
+          <button
+            type="submit"
+            className="f04v08-send-button"
+            aria-label="Send to patient"
+            title="Send message"
+            disabled={!canChat || patientChat.sending || !patientChat.draft.trim()}
+          >
+            {patientChat.sending ? <span className="f04v08-spinner" aria-label="Sending" /> : <Send size={19} />}
+          </button>
+        </form>
 
         <button className={styles.endButton} onClick={() => setConfirmEnd(true)} disabled={ended}>
           <span>End Session</span>
@@ -478,19 +525,37 @@ export default function SimulationPreview() {
         <div className={styles.overlay} onClick={() => setChatOpen(false)}>
           <aside className={`${styles.drawer} ${styles.chatDrawer}`} onClick={(event) => event.stopPropagation()}>
             <div className={styles.drawerHeader}>
-              <div><small>SESSION HISTORY</small><h2>Session Transcript</h2></div>
+              <div><small>F04 · SAVED CONVERSATION</small><h2>Chat History</h2></div>
               <button className={styles.iconButton} aria-label="Close chat" onClick={() => setChatOpen(false)}><X /></button>
             </div>
-            <div className={styles.transcript}>
-              {displayMessages.length === 0 && <p>No saved messages yet.</p>}
+            <div className={styles.transcript} aria-live="polite" aria-label="Saved patient conversation">
+              {patientChat.loading && <p role="status">Loading saved messages...</p>}
+              {!patientChat.loading && displayMessages.length === 0 && (
+                <p>No messages yet. Introduce yourself to the patient.</p>
+              )}
               {displayMessages.map((message) => (
                 <div key={message.id} className={`${styles.message} ${message.role === "student" ? styles.studentMessage : ""}`}>
-                  <small>{message.role === "student" ? "You" : "System"} · {message.time}</small>
-                  <p>{message.text}</p>
+                  <small>{message.role === "student" ? "You · Student" : "Patient"} · {message.time}</small>
+                  <p dir="auto" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{message.text}</p>
                 </div>
               ))}
+              <div ref={chatTailRef} />
             </div>
-
+            {patientChat.error && (
+              <div role="alert" style={{ color: "#ffd6c6", background: "#642c29", padding: 10, borderRadius: 10, marginBottom: 9, fontSize: 12 }}>
+                {patientChat.error}
+                <button type="button" onClick={() => void patientChat.retryRefresh()}
+                  style={{ display: "block", marginTop: 7, color: "white", textDecoration: "underline" }}>
+                  Refresh history
+                </button>
+              </div>
+            )}
+            {!canChat && (
+              <p style={{ color: "#edd0aa", fontSize: 12, marginBottom: 8 }}>
+                {!liveSession ? "Connecting to your simulation..." : ended ? "Session completed · chat is read-only." : paused ? "Resume the session to chat." : currentPhase !== "history_taking" ? "Patient chat is available during History Taking." : "Finish the current action first."}
+              </p>
+            )}
+            <p className="f04v08-history-note">المحادثة محفوظة تلقائيًا. اكتب سؤالك من الشريط السفلي في العيادة.</p>
           </aside>
         </div>
       )}

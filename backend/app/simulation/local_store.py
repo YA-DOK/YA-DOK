@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-
 DEFAULT_DB_PATH = (
     Path(__file__).resolve().parents[2]
     / "simulation_local.db"

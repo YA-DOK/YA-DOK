@@ -1,15 +1,15 @@
-from datetime import timezone
+from collections.abc import Callable
 from copy import deepcopy
-from typing import Any, Callable
+from datetime import UTC
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
-import app.models.profile  # Register profiles FK target
-from app.models.simulation_session import SimulationSessionModel
-from app.models.simulation_event import SimulationEventModel
 from app.models.simulation_action_request import SimulationActionRequestModel
+from app.models.simulation_event import SimulationEventModel
+from app.models.simulation_session import SimulationSessionModel
 from app.services.simulation_service import SimulationService, _json_safe
 from app.simulation.action_request import (
     classify_request,
@@ -79,7 +79,7 @@ def _hydrate(row, events) -> SimulationSession:
                 event_type=event.event_type,
                 phase=SimulationPhase(event.phase),
                 details=deepcopy(event.details),
-                timestamp=event.created_at.astimezone(timezone.utc),
+                timestamp=event.created_at.astimezone(UTC),
             )
         )
 

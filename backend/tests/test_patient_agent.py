@@ -2,7 +2,6 @@
 import asyncio
 
 import pytest
-
 from backend.app.ai.llm.base import LLMService
 from backend.app.simulation.patient_agent import PatientAgent
 

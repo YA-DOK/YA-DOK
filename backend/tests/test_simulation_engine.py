@@ -1,6 +1,5 @@
 
 import pytest
-
 from backend.app.simulation.engine import (
     InvalidPhaseTransition,
     SimulationPhase,
@@ -53,7 +52,6 @@ def test_cannot_transition_after_completion():
 
 from backend.app.simulation.engine import (
     SimulationError,
-    SimulationPhase,
     advance_phase,
     ask_patient,
     complete_session,

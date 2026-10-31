@@ -4,14 +4,14 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from app.main import app
 from app.api.routes import simulation
 from app.core.security import get_current_user
-from app.simulation.engine import create_session
+from app.main import app
 from app.simulation.action_request import (
-    create_action_identity,
     classify_request,
+    create_action_identity,
 )
+from app.simulation.engine import create_session
 
 USER_ID = str(uuid4())
 OTHER_USER_ID = str(uuid4())
