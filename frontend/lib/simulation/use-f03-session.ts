@@ -84,6 +84,8 @@ export function useF03Session() {
         const params = new URLSearchParams(window.location.search);
         const selected: F03Mode =
           params.get("mode") === "test" ? "test" : "training";
+        // Starting from the Case Library is a NEW attempt. Refresh is a resume.
+        const newAttempt = params.get("new") === "1";
 
         const caseCode = params.get("case") ?? "";
         if (!/^[A-Za-z0-9_-]{3,120}$/.test(caseCode)) {
@@ -103,7 +105,7 @@ export function useF03Session() {
         storageKey.current = key;
 
         let loaded: F03Session | null = null;
-        const savedId = sessionStorage.getItem(key);
+        const savedId = newAttempt ? null : sessionStorage.getItem(key);
 
         if (savedId) {
           try {
@@ -111,6 +113,7 @@ export function useF03Session() {
             if (
               loaded.case_code !== caseCode ||
               loaded.mode !== selected ||
+              loaded.is_completed ||
               !loaded.case_version_id
             ) {
               loaded = null;
@@ -127,6 +130,13 @@ export function useF03Session() {
         const current = loaded ?? await f03Live.startPublished(caseCode, selected);
 
         if (!loaded) sessionStorage.setItem(key, current.session_id);
+
+        // Do not create another attempt when the student refreshes this URL.
+        if (newAttempt) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("new");
+          window.history.replaceState(window.history.state, "", url.toString());
+        }
 
         setSession(current);
         setMode(current.mode ?? selected);
@@ -175,6 +185,9 @@ export function useF03Session() {
 
       const updated = await f03Live.get(session.session_id);
       setSession(updated);
+      if (updated.is_completed && storageKey.current) {
+        sessionStorage.removeItem(storageKey.current);
+      }
       pending.current.delete(identity);
       setError("");
       return true;

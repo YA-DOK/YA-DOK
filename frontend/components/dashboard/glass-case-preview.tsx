@@ -23,11 +23,11 @@ export function GlassCasePreview({item,error}:{item:StudentCaseSummary|null;erro
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
       <Link className="ydash-outline-action"
-        href={`/simulation/preview?case=${encodeURIComponent(item.case_id)}&mode=training`}>
+        href={`/simulation/preview?case=${encodeURIComponent(item.case_id)}&mode=training&new=1`}>
         Training Mode
       </Link>
       <Link className="ydash-outline-action"
-        href={`/simulation/preview?case=${encodeURIComponent(item.case_id)}&mode=test`}>
+        href={`/simulation/preview?case=${encodeURIComponent(item.case_id)}&mode=test&new=1`}>
         Test Mode
       </Link>
     </div>

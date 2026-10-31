@@ -53,7 +53,7 @@ export function GlassCasesBrowser({data,error,specialty,difficulty,page,mode}:Pr
       <div className="ydash-case-card-image"><MedicalPhoto src={artworkFor(item)} fallback={fallbackFor(item)} alt="Editorial medical image illustrating the specialty; not the case patient"/><div className="ydash-case-image-overlay"/><span className="ydash-case-image-status">PUBLISHED</span></div>
       <div className="ydash-case-card-body"><div className="ydash-case-card-top"><span>{item.specialty||"Restricted"}</span><span>{item.difficulty||"—"}</span></div><h2>{item.title||item.case_id}</h2><p>{item.short_brief||translated(locale,"افتح المعاينة للتفاصيل العامة.","Open preview for general details.")}</p><div className="ydash-case-card-footer"><small><DashboardIcon name="clock" size={15}/>{item.estimated_duration_minutes?`${item.estimated_duration_minutes} min`:"—"}</small><div className="ydash-card-actions"><Link href={`/dashboard/cases/${encodeURIComponent(item.case_id)}`} className="ydash-outline-action">{translated(locale,"التفاصيل", "Details")}</Link>
 <Link
-  href={`/simulation/preview?case=${encodeURIComponent(item.case_id)}&mode=${mode === "test" ? "test" : "training"}`}
+  href={`/simulation/preview?case=${encodeURIComponent(item.case_id)}&mode=${mode === "test" ? "test" : "training"}&new=1`}
   className="ydash-outline-action"
 >
   Start <DashboardIcon name="play" size={16}/>
