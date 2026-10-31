@@ -4,18 +4,23 @@ The state machine remains authoritative in F03. F04 never transitions it.
 """
 from __future__ import annotations
 
-import logging
 import json
+import logging
 import re
 import time
 import unicodedata
 from uuid import UUID, uuid4
 
 from .blueprint import project_history
+from .contracts import (
+    ChatRepository,
+    PatientReply,
+    SendMessageRequest,
+    TextModel,
+)
 from .coverage import question_parts, spans_accounted_for
-from .numeric_grounding import numbers_grounded
-from .contracts import ChatRepository, PatientChatResult, PatientReply, SendMessageRequest, TextModel
 from .errors import failure
+from .numeric_grounding import numbers_grounded
 from .provider import InvalidModelOutput, ProviderUnavailable
 
 logger = logging.getLogger("yadoc.f04")

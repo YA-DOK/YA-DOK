@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
-from fastapi import HTTPException
-
 from app.ai.f04.blueprint import project_history
 from app.ai.f04.contracts import (
-    PatientChatResult, PatientReply, Reservation, SendMessageRequest,
-    SessionSnapshot, StoredMessage,
+    PatientChatResult,
+    Reservation,
+    SendMessageRequest,
+    SessionSnapshot,
+    StoredMessage,
 )
-from app.ai.f04.provider import InvalidModelOutput, ProviderUnavailable
+from app.ai.f04.provider import ProviderUnavailable
 from app.ai.f04.service import ChatService, contains_hidden_answer, numbers_grounded
+from fastapi import HTTPException
 
 
 def blueprint():

@@ -36,7 +36,7 @@ async def send_patient_message(
     session_id: UUID,
     payload: SendMessageRequest,
     request: Request,
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user),  # noqa: B008
 ):
     client = getattr(request.app.state, "f04_http_client", None)
     if client is None:
@@ -60,7 +60,7 @@ async def send_patient_message(
 async def list_patient_messages(
     session_id: UUID,
     limit: int = Query(default=100, ge=1, le=100),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user),  # noqa: B008
 ):
     repo = _repository()
     snapshot = await repo.get_session(session_id)

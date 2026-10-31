@@ -9,13 +9,12 @@ import json
 from uuid import uuid4
 
 import pytest
-from fastapi import HTTPException
-
 from app.ai.f04.blueprint import project_history
 from app.ai.f04.contracts import PatientChatResult, QuestionPart, SendMessageRequest
 from app.ai.f04.coverage import question_parts
-from app.ai.f04.service import ChatService, SYSTEM_POLICY
-from test_f04_core import FakeRepo, FakeModel
+from app.ai.f04.service import SYSTEM_POLICY, ChatService
+from fastapi import HTTPException
+from test_f04_core import FakeModel, FakeRepo
 
 
 def q(text):

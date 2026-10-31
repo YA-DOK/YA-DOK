@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 
 @dataclass(frozen=True)
@@ -55,15 +55,15 @@ def _normalize(value: str) -> str:
 
 def _phrase(source: str) -> str | None:
     # Do not reduce ranges, negation or vague/uncertain durations to a fixed answer.
-    if re.search(r"\b(approximately|around|about|maybe|up to|at least|possibly|unknown|resolved|previously|last month|last year|months ago|years ago)\b", source, re.I):
+    if re.search(r"\b(approximately|around|about|maybe|up to|at least|possibly|unknown|resolved|previously|last month|last year|months ago|years ago)\b", source, re.IGNORECASE):
         return None
-    if re.search(r"\b(no|not|never|denies|without)\b", source, re.I):
+    if re.search(r"\b(no|not|never|denies|without)\b", source, re.IGNORECASE):
         return None
     # A duration of *worsening* is not necessarily duration since onset.
-    if re.search(r"\b(worsen(?:ed|ing|s)?|getting worse|more noticeable|intensif(?:ied|ying)|improv(?:ed|ing)|increas(?:ed|ing))\b", source, re.I):
+    if re.search(r"\b(worsen(?:ed|ing|s)?|getting worse|more noticeable|intensif(?:ied|ying)|improv(?:ed|ing)|increas(?:ed|ing))\b", source, re.IGNORECASE):
         return None
     # Mentioning a time span alone is not proof it describes symptom onset.
-    if not re.search(r"\b(for|since|started|began|onset|has been|have been|lasted|lasting)\b", source, re.I):
+    if not re.search(r"\b(for|since|started|began|onset|has been|have been|lasted|lasting)\b", source, re.IGNORECASE):
         return None
     matches = list(_DURATION.finditer(source))
     if len(matches) != 1:
@@ -107,10 +107,8 @@ def grounded_duration_answer(question: str, facts: Iterable[dict[str, str]]) -> 
         source = fact.get("fact", "")
         if not isinstance(source, str):
             continue
-        if category == target:
-            candidates.append(fact)
-        elif category in ("onset_duration", "chief_complaint") and any(
-            re.search(r"\b" + re.escape(word) + r"\b", source, re.I)
+        if category == target or category in ("onset_duration", "chief_complaint") and any(
+            re.search(r"\b" + re.escape(word) + r"\b", source, re.IGNORECASE)
             for word in source_aliases
         ):
             candidates.append(fact)

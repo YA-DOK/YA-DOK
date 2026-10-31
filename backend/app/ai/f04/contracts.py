@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any, Literal, Protocol
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 Intent = Literal[
     "history_question", "examination_request", "investigation_request",

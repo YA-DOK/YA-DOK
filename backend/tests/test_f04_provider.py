@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import json
-from uuid import UUID, uuid4
 
 import httpx
 import pytest
-from fastapi import FastAPI, HTTPException
-
-from app.ai.f04.contracts import PatientChatResult, SendMessageRequest
-from app.ai.f04.provider import ModelSettings, OpenRouterTextModel, ProviderUnavailable, InvalidModelOutput
-from app.ai.f04.service import ChatService
+from app.ai.f04.provider import (
+    InvalidModelOutput,
+    ModelSettings,
+    OpenRouterTextModel,
+    ProviderUnavailable,
+)
 
 
 @pytest.mark.asyncio

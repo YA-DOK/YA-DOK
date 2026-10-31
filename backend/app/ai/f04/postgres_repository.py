@@ -8,15 +8,18 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
-from hashlib import sha256
 from uuid import UUID, uuid4
 
-from fastapi import HTTPException
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.orm import sessionmaker
 from starlette.concurrency import run_in_threadpool
 
-from app.ai.f04.contracts import PatientReply, Reservation, SessionSnapshot, StoredMessage
+from app.ai.f04.contracts import (
+    PatientReply,
+    Reservation,
+    SessionSnapshot,
+    StoredMessage,
+)
 from app.ai.f04.errors import failure
 from app.models.case import CaseVersion
 from app.models.simulation_action_request import SimulationActionRequestModel
