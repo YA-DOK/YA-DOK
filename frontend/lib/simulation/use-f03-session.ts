@@ -1,0 +1,242 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import {
+  f03Live,
+  F03HttpError,
+  type F03Mode,
+  type F03Phase,
+  type F03Session,
+} from "./f03-live";
+
+type Action = "phase" | "pause" | "resume" | "diagnosis" | "complete";
+
+const phases: F03Phase[] = [
+  "introduction",
+  "history_taking",
+  "examination",
+  "investigations",
+  "diagnosis_and_plan",
+  "completed",
+];
+
+function sessionSeconds(session: F03Session): number {
+  const created = session.events.find(
+    (event) => event.event_type === "session_created"
+  );
+
+  if (!created) return 0;
+
+  const start = Date.parse(created.timestamp);
+  if (!Number.isFinite(start)) return 0;
+
+  const completed = session.events.find(
+    (event) => event.event_type === "session_completed"
+  );
+
+  const end = completed
+    ? Date.parse(completed.timestamp)
+    : Date.now();
+
+  let pausedAt: number | null = null;
+  let pausedTime = 0;
+
+  for (const event of session.events) {
+    const time = Date.parse(event.timestamp);
+    if (!Number.isFinite(time)) continue;
+
+    if (event.event_type === "session_paused") {
+      pausedAt = time;
+    } else if (
+      event.event_type === "session_resumed" &&
+      pausedAt !== null
+    ) {
+      pausedTime += time - pausedAt;
+      pausedAt = null;
+    }
+  }
+
+  if (pausedAt !== null) pausedTime += end - pausedAt;
+
+  return Math.max(0, Math.floor((end - start - pausedTime) / 1000));
+}
+
+export function useF03Session() {
+  const [session, setSession] = useState<F03Session | null>(null);
+  const [mode, setMode] = useState<F03Mode>("training");
+  const [elapsed, setElapsed] = useState(0);
+  const [busy, setBusy] = useState(true);
+  const [error, setError] = useState("");
+  const [caseCode, setCaseCode] = useState("");
+
+  const booted = useRef(false);
+  const storageKey = useRef("");
+  const pending = useRef(new Map<string, string>());
+  const inFlight = useRef(false);
+
+  useEffect(() => {
+    if (booted.current) return;
+    booted.current = true;
+
+    async function bootstrap() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const selected: F03Mode =
+          params.get("mode") === "test" ? "test" : "training";
+
+        const caseCode = params.get("case") ?? "";
+        if (!/^[A-Za-z0-9_-]{3,120}$/.test(caseCode)) {
+          throw new Error("Select a valid case from the Case Library.");
+        }
+        setCaseCode(caseCode);
+
+
+        const { data: { user } } = await createClient().auth.getUser();
+
+        if (!user) throw new Error("Please log in first.");
+
+
+        const key =
+          `yadok:f03:${user.id}:${caseCode}:${selected}`;
+
+        storageKey.current = key;
+
+        let loaded: F03Session | null = null;
+        const savedId = sessionStorage.getItem(key);
+
+        if (savedId) {
+          try {
+            loaded = await f03Live.get(savedId);
+            if (
+              loaded.case_code !== caseCode ||
+              loaded.mode !== selected ||
+              !loaded.case_version_id
+            ) {
+              loaded = null;
+              sessionStorage.removeItem(key);
+            }
+          } catch (err) {
+            if (!(err instanceof F03HttpError) || err.status !== 404) {
+              throw err;
+            }
+            sessionStorage.removeItem(key);
+          }
+        }
+
+        const current = loaded ?? await f03Live.startPublished(caseCode, selected);
+
+        if (!loaded) sessionStorage.setItem(key, current.session_id);
+
+        setSession(current);
+        setMode(current.mode ?? selected);
+        setError("");
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Could not start session."
+        );
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    void bootstrap();
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+
+    const tick = () => setElapsed(sessionSeconds(session));
+    tick();
+
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [session]);
+
+  async function runAction(
+    action: Action,
+    body: Record<string, unknown> = {}
+  ): Promise<boolean> {
+    if (!session || inFlight.current) return false;
+
+    const identity = `${action}:${JSON.stringify(body)}`;
+    let requestId = pending.current.get(identity);
+
+    if (!requestId) {
+      requestId = crypto.randomUUID();
+      pending.current.set(identity, requestId);
+    }
+
+    inFlight.current = true;
+    setBusy(true);
+
+    try {
+      await f03Live.action(session.session_id, action, body, requestId);
+
+      const updated = await f03Live.get(session.session_id);
+      setSession(updated);
+      pending.current.delete(identity);
+      setError("");
+      return true;
+    } catch (err) {
+      if (err instanceof F03HttpError && err.status < 500) {
+        pending.current.delete(identity);
+      }
+
+      setError(err instanceof Error ? err.message : "Action failed.");
+      return false;
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
+    }
+  }
+
+  async function finish(diagnosis: string, plan: string): Promise<boolean> {
+    if (!session || session.current_phase !== "diagnosis_and_plan") {
+      setError("Complete the earlier phases before ending this session.");
+      return false;
+    }
+
+    if (!session.diagnosis || !session.treatment_plan) {
+      if (!diagnosis.trim() || !plan.trim()) {
+        setError("Diagnosis and treatment plan are required.");
+        return false;
+      }
+
+      const saved = await runAction("diagnosis", {
+        diagnosis: diagnosis.trim(),
+        treatment_plan: plan.trim(),
+      });
+
+      if (!saved) return false;
+    }
+
+    return runAction("complete");
+  }
+
+  function restart() {
+    if (storageKey.current) {
+      sessionStorage.removeItem(storageKey.current);
+    }
+    window.location.reload();
+  }
+
+  const currentPhase = session?.current_phase ?? "introduction";
+  const nextPhase = phases[phases.indexOf(currentPhase) + 1];
+
+  return {
+    session,
+    caseCode,
+    mode,
+    elapsed,
+    busy,
+    error,
+    paused: session?.is_paused ?? false,
+    ended: session?.is_completed ?? false,
+    currentPhase,
+    nextPhase,
+    runAction,
+    finish,
+    restart,
+  };
+}

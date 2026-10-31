@@ -1,0 +1,458 @@
+.ydokpreview_root {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: hidden;
+  isolation: isolate;
+  color: #f9f5ec;
+  background: #252d29;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+}
+.ydokpreview_root button { cursor: pointer; }
+.ydokpreview_root button:disabled { cursor: not-allowed; opacity: .5; }
+.ydokpreview_root button:focus-visible, .ydokpreview_root a:focus-visible, .ydokpreview_root input:focus-visible {
+  outline: 2px solid #7df3d5;
+  outline-offset: 3px;
+}
+.ydokpreview_glass {
+  background: rgba(33, 39, 36, .67);
+  border: 1px solid rgba(241, 236, 220, .20);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, .20), inset 0 1px rgba(255,255,255,.07);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 19px;
+}
+.ydokpreview_environment { position: absolute; inset: 0; overflow: hidden; }
+.ydokpreview_fallback {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, #a89884 0%, #dfcab0 49%, #947761 51%, #493e37 100%);
+  animation: sceneEntry 1.8s ease-out both;
+}
+.ydokpreview_fallback:before {
+  content: ""; position: absolute; inset: 0 0 45%;
+  background: linear-gradient(90deg, transparent 38%, rgba(255,244,211,.24) 55%, transparent 70%);
+}
+.ydokpreview_scenePhoto {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: 0; transform: scale(1.04); transition: opacity 1s ease;
+}
+.ydokpreview_photoReady { opacity: 1; animation: sceneEntry 1.8s ease-out both; }
+.ydokpreview_sceneShade {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(13,20,18,.45), transparent 32%, transparent 68%, rgba(13,20,18,.32)),
+    linear-gradient(180deg, rgba(11,17,16,.40), transparent 24%, transparent 57%, rgba(15,18,17,.55));
+}
+.ydokpreview_poster {
+  position: absolute; width: 18%; left: 44%; top: 12%; padding: 3%;
+  background: #f2e9d9; color: #779583; border: 12px solid #d4bc9f;
+  text-align: center; font-size: clamp(13px, 2vw, 29px); font-weight: 800; letter-spacing: 3px;
+  box-shadow: 0 8px 35px #68554555;
+}
+.ydokpreview_poster span { font-size: 9px; letter-spacing: 2px; color: #bb9d7d; }
+.ydokpreview_clinicWindow {
+  position: absolute; left: 7%; top: 13%; width: 23%; height: 41%;
+  border: 14px solid #e9ddca; border-radius: 5px;
+  background: linear-gradient(145deg, #c1d7ce, #91b3aa 50%, #e0ece0);
+  box-shadow: 6px 12px 36px #66544455;
+}
+.ydokpreview_clinicWindow:after {
+  content: ""; position: absolute; inset: 0; border-left: 6px solid #f5ead9;
+  border-right: 6px solid #f5ead9; left: 49%; right: 48%;
+}
+.ydokpreview_shelf {
+  position: absolute; right: 5%; top: 17%; width: 21%; height: 34%;
+  background: repeating-linear-gradient(to bottom, #ae8f71 0 7px, #d7bca0 8px 65px);
+  border: 12px solid #b59b80; border-radius: 6px;
+}
+.ydokpreview_examBed {
+  position: absolute; right: 0; bottom: 29%; height: 14%; width: 22%;
+  background: #89a6a3; border: 15px solid #c6b39d; border-radius: 60px 0 0 12px;
+  box-shadow: 0 12px 20px #3d383055;
+}
+.ydokpreview_figures { position: absolute; width: 42%; height: 69%; left: 30%; bottom: 8%; }
+.ydokpreview_figure { position: absolute; bottom: 2%; }
+.ydokpreview_child { width: 42%; height: 66%; left: 0; z-index: 2; }
+.ydokpreview_mother { width: 58%; height: 90%; right: 0; z-index: 1; }
+.ydokpreview_face {
+  position: absolute; z-index: 3; top: 15%; left: 22%; width: 56%; height: 38%;
+  border-radius: 44% 44% 47% 47%; background: linear-gradient(95deg, #b98562, #e9b892 58%, #c98d69);
+  box-shadow: inset -12px -10px 20px #89583e33;
+}
+.ydokpreview_hair {
+  position: absolute; z-index: 2; top: 7%; left: 15%; width: 70%; height: 47%;
+  border-radius: 48% 50% 30% 30%; background: #352823;
+}
+.ydokpreview_mother .ydokpreview_hair { width: 82%; left: 9%; height: 75%; background: #292321; }
+.ydokpreview_body {
+  position: absolute; bottom: 0; width: 100%; height: 57%;
+  background: linear-gradient(95deg, #d9c0a5, #efe0c5 50%, #baaa92);
+  border-radius: 48% 48% 13% 13%;
+}
+.ydokpreview_mother .ydokpreview_body { background: linear-gradient(95deg, #9d8575, #dbc6af 55%, #95806f); }
+.ydokpreview_desk {
+  position: absolute; bottom: -5%; left: -4%; width: 108%; height: 27%;
+  transform: perspective(450px) rotateX(21deg);
+  background: linear-gradient(110deg, #765238, #c49d74 40%, #8c6749 80%);
+  box-shadow: 0 -12px 25px #5f3b2866;
+}
+.ydokpreview_clipboard {
+  position: absolute; z-index: 3; bottom: -11%; left: 39%; width: 26%; height: 32%;
+  background: #dedad0; border: 15px solid #4d4741; border-radius: 16px;
+  transform: perspective(450px) rotateX(42deg); box-shadow: 0 5px 22px #0005;
+}
+.ydokpreview_topBar {
+  position: absolute; z-index: 5; top: 20px; left: 26px; right: 26px;
+  display: flex; justify-content: space-between; align-items: center; gap: 15px;
+  animation: dropIn .6s ease both;
+}
+.ydokpreview_brand, .ydokpreview_profile { display: flex; align-items: center; gap: 12px; padding: 12px 18px; }
+.ydokpreview_brand { color: #78e5cd; }
+.ydokpreview_brand strong { color: white; font-size: 22px; letter-spacing: -1px; }
+.ydokpreview_brandSub { color: #d6cdc1; padding-left: 14px; border-left: 1px solid #ffffff35; font-size: 12px; }
+.ydokpreview_topCenter { display: flex; gap: 10px; align-items: center; }
+.ydokpreview_status, .ydokpreview_modeButton, .ydokpreview_timer {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 13px 17px; font-weight: 700; white-space: nowrap; color: white;
+}
+.ydokpreview_greenDot { width: 9px; height: 9px; border-radius: 50%; background: #4ce2ae; box-shadow: 0 0 15px #4ce2ae; }
+.ydokpreview_modeButton {
+  background: rgba(250, 234, 208, .94); color: #493d32; border: 0;
+  transition: transform .2s ease;
+}
+.ydokpreview_modeButton:hover { transform: translateY(-2px); }
+.ydokpreview_timer { border-color: #68cdb16d; color: #e5fff2; font-variant-numeric: tabular-nums; }
+.ydokpreview_timer strong { font-size: 18px; letter-spacing: 1px; }
+.ydokpreview_timer small { color: #b8c9bf; font-size: 10px; }
+.ydokpreview_initials { width: 36px; height: 36px; border: 1px solid #cba47c; border-radius: 50%; display: grid; place-items: center; color: #ffe2c1; }
+.ydokpreview_profile strong { font-size: 12px; display: block; }
+.ydokpreview_profile small { color: #c9b9a7; display: block; font-size: 10px; margin-top: 4px; }
+.ydokpreview_toolRail {
+  position: absolute; z-index: 5; top: 116px; bottom: 128px; left: 26px; width: 65px;
+  display: flex; align-items: center; flex-direction: column; padding: 13px 8px; gap: 12px;
+}
+.ydokpreview_railButton {
+  flex-shrink: 0; width: 47px; height: 47px; border: 1px solid #ffffff10;
+  border-radius: 14px; background: rgba(255,255,255,.05); color: #e6dbcb;
+  display: grid; place-items: center; transition: .2s;
+}
+.ydokpreview_railButton:hover, .ydokpreview_activeTool {
+  background: #266e60a8; color: #abffe3; border-color: #61e2c6a0; box-shadow: 0 0 18px #38c4a84a;
+}
+.ydokpreview_railSeparator { height: 1px; width: 75%; background: #ffffff29; margin: 4px; }
+.ydokpreview_patientCard, .ydokpreview_encounterCard, .ydokpreview_vitalsPanel {
+  position: absolute; z-index: 4; padding: 18px; animation: fadeIn .8s .2s both;
+}
+.ydokpreview_patientCard { top: 128px; left: 112px; width: 280px; }
+.ydokpreview_cardHeading { display: flex; gap: 10px; align-items: center; font-weight: 700; font-size: 13px; margin-bottom: 19px; }
+.ydokpreview_patientLine { display: flex; gap: 11px; align-items: center; margin-top: 14px; }
+.ydokpreview_avatarIcon {
+  flex-shrink: 0; width: 38px; height: 38px; display: grid; place-items: center;
+  background: #b5967159; border-radius: 13px; color: #f8d3aa; font-weight: 700;
+}
+.ydokpreview_patientLine strong { font-size: 12px; }
+.ydokpreview_patientLine strong small { font-weight: 400; color: #d6c4b5; }
+.ydokpreview_patientLine p { color: #c4b6a7; font-size: 11px; margin-top: 5px; }
+.ydokpreview_previewTag { display: inline-block; font-size: 10px; color: #f5caa0; margin-top: 15px; }
+.ydokpreview_encounterCard { bottom: 130px; left: 112px; width: 295px; }
+.ydokpreview_encounterCard p { font-size: 12px; line-height: 1.6; margin: 6px 0; }
+.ydokpreview_encounterCard .ydokpreview_subtle { color: #c6c4ba; }
+.ydokpreview_logTime { display: flex; align-items: center; gap: 7px; color: #c7a989; margin-top: 12px; font-size: 11px; }
+.ydokpreview_vitalsPanel { top: 128px; right: 25px; width: 340px; }
+.ydokpreview_vitalsHeading, .ydokpreview_vitalsHeading span { display: flex; gap: 9px; align-items: center; }
+.ydokpreview_vitalsHeading { justify-content: space-between; margin-bottom: 15px; font-weight: 700; }
+.ydokpreview_vitalsHeading span { color: #a3f3d8; }
+.ydokpreview_vitalsHeading small { color: #b6c8bd; font-size: 10px; }
+.ydokpreview_vitalGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.ydokpreview_vitalItem { min-height: 90px; padding: 10px; background: #ffffff13; border: 1px solid #ffffff1e; border-radius: 12px; text-align: center; }
+.ydokpreview_vitalName { display: flex; align-items: center; justify-content: center; gap: 5px; color: #a7e6db; font-size: 11px; }
+.ydokpreview_vitalItem strong { display: block; font-size: 19px; margin-top: 7px; font-variant-numeric: tabular-nums; }
+.ydokpreview_vitalItem small { color: #c8c3b8; font-size: 10px; }
+.ydokpreview_vitalsDisclaimer { font-size: 10px; color: #d7b994; margin-top: 12px; }
+.ydokpreview_assistantArea { position: absolute; z-index: 6; right: 34px; bottom: 145px; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.ydokpreview_hintOrb {
+  display: grid; place-items: center; width: 76px; height: 76px;
+  color: #defff3; background: radial-gradient(circle at 30% 25%, #a4ffe2, #258c7e 55%, #134f4d);
+  border: 3px solid #a4f7df; border-radius: 50%;
+  box-shadow: 0 0 0 10px #3bd7ba1a, 0 0 34px #47dfbda3;
+  animation: hintFloat 4s ease-in-out infinite; transition: transform .25s;
+}
+.ydokpreview_hintOrb:hover { transform: scale(1.08); }
+.ydokpreview_hintBubble { position: relative; width: 300px; padding: 17px; }
+.ydokpreview_hintBubble strong { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #8ef2d9; }
+.ydokpreview_hintBubble p { line-height: 1.6; font-size: 12px; margin: 12px 0; }
+.ydokpreview_hintBubble small { color: #d2b99c; font-size: 10px; }
+.ydokpreview_closeMini { position: absolute; right: 12px; top: 12px; border: 0; color: white; background: none; }
+.ydokpreview_dock {
+  position: absolute; z-index: 7; left: 50%; bottom: 24px; transform: translateX(-50%);
+  width: min(1040px, calc(100% - 180px)); padding: 12px 16px;
+  display: flex; align-items: center; gap: 11px;
+  animation: dockEntry .8s ease both;
+}
+.ydokpreview_dockButton, .ydokpreview_endButton, .ydokpreview_voiceButton {
+  min-height: 52px; border: 1px solid #ffffff25; border-radius: 15px;
+  display: flex; gap: 9px; align-items: center; justify-content: center;
+  padding: 0 17px; white-space: nowrap; color: #f8eee3; font-size: 13px; font-weight: 700;
+  background: #ffffff16; transition: background .2s, transform .2s;
+}
+.ydokpreview_dockButton:hover { background: #ffffff27; }
+.ydokpreview_voiceButton {
+  flex: 1; min-width: 160px; padding: 5px 15px 5px 6px;
+  justify-content: flex-start; background: #142b29c9; border-radius: 40px;
+}
+.ydokpreview_micCircle { width: 43px; height: 43px; flex-shrink: 0; border-radius: 50%; background: #edbc8c; color: #303a37; display: grid; place-items: center; }
+.ydokpreview_waveform { color: #73e5ca; font-size: 24px; letter-spacing: 3px; animation: wavePulse 1.6s ease-in-out infinite; }
+.ydokpreview_voiceText { font-size: 11px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; }
+.ydokpreview_keyboardIcon { margin-left: auto; color: #b3d8c9; flex-shrink: 0; }
+.ydokpreview_endButton { color: white; background: #d65f58; border-color: #ffaaa29b; box-shadow: 0 0 18px #d65f5845; }
+.ydokpreview_endButton:hover { background: #e06c62; transform: translateY(-2px); }
+.ydokpreview_demoLabel { position: absolute; z-index: 5; right: 28px; bottom: 101px; font-size: 9px; letter-spacing: 1.5px; color: #dfd3bf; opacity: .8; }
+.ydokpreview_toast {
+  position: absolute; z-index: 11; bottom: 115px; left: 50%; transform: translateX(-50%);
+  background: #143c36; border: 1px solid #5dd5ac; color: #e7fff2;
+  border-radius: 13px; padding: 12px 16px; font-size: 12px; display: flex; align-items: center; gap: 15px; cursor: pointer;
+}
+.ydokpreview_overlay { position: absolute; z-index: 15; inset: 0; background: #07120f75; backdrop-filter: blur(6px); }
+.ydokpreview_drawer {
+  position: absolute; left: 0; top: 0; bottom: 0; width: min(390px, 94vw);
+  background: #1e2925ee; border-right: 1px solid #7ad6be59; padding: 25px;
+  display: flex; flex-direction: column; box-shadow: 20px 0 70px #0006;
+  animation: drawerIn .3s ease both;
+}
+.ydokpreview_chatDrawer { left: auto; right: 0; border-right: 0; border-left: 1px solid #7ad6be59; animation: drawerRight .3s ease both; }
+.ydokpreview_drawerHeader { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 21px; border-bottom: 1px solid #ffffff19; }
+.ydokpreview_drawerHeader small { font-size: 10px; letter-spacing: 2px; color: #82d3bb; }
+.ydokpreview_drawerHeader h2 { font-size: 23px; margin-top: 7px; }
+.ydokpreview_iconButton { background: #ffffff14; border: 1px solid #ffffff22; color: #f6eee1; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; }
+.ydokpreview_toolList { display: grid; gap: 8px; margin-top: 27px; }
+.ydokpreview_toolChoice { display: flex; align-items: center; gap: 12px; text-align: left; padding: 15px; color: #e7ddce; background: #ffffff09; border: 1px solid #ffffff0d; border-radius: 12px; }
+.ydokpreview_toolChoice svg:last-child { margin-left: auto; }
+.ydokpreview_toolSelected { color: #a2f8d7; background: #1b7a6666; border-color: #72e3c26e; }
+.ydokpreview_drawerDetail { margin-top: 27px; padding: 22px; border: 1px solid #ffffff20; border-radius: 17px; background: #ffffff0a; }
+.ydokpreview_drawerDetail svg { color: #89e2ca; }
+.ydokpreview_drawerDetail h3 { font-size: 20px; margin: 13px 0; }
+.ydokpreview_drawerDetail p { color: #d3cec4; line-height: 1.7; font-size: 13px; }
+.ydokpreview_drawerDetail span { color: #e5b58b; display: block; margin-top: 15px; font-size: 11px; }
+.ydokpreview_transcript { overflow-y: auto; flex: 1; padding: 20px 0; display: flex; flex-direction: column; gap: 13px; }
+.ydokpreview_message { background: #ffffff13; border: 1px solid #ffffff18; border-radius: 16px 16px 16px 4px; padding: 13px; max-width: 90%; }
+.ydokpreview_studentMessage { align-self: flex-end; background: #236f5d83; border-radius: 16px 16px 4px 16px; }
+.ydokpreview_message small { color: #b2dacb; font-size: 10px; }
+.ydokpreview_message p { margin-top: 8px; line-height: 1.6; font-size: 13px; }
+.ydokpreview_chatForm { display: flex; gap: 10px; background: #ffffff0d; border-radius: 14px; padding: 8px; border: 1px solid #ffffff28; }
+.ydokpreview_chatForm input { flex: 1; min-width: 0; background: transparent; border: 0; color: white; outline: none; font-size: 12px; }
+.ydokpreview_chatForm button { background: #408d74; color: white; padding: 10px; border-radius: 10px; border: 0; }
+.ydokpreview_modalOverlay { position: absolute; z-index: 25; inset: 0; display: grid; place-items: center; padding: 20px; background: #05100ebf; backdrop-filter: blur(12px); }
+.ydokpreview_modal { width: min(440px, 100%); padding: 30px; }
+.ydokpreview_modal h2 { font-size: 24px; margin-bottom: 14px; }
+.ydokpreview_modal p { line-height: 1.7; color: #d4cabe; }
+.ydokpreview_modalActions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 25px; }
+.ydokpreview_modalActions a { text-decoration: none; }
+.ydokpreview_successIcon { color: #76e2b9; margin-bottom: 18px; }
+@keyframes sceneEntry { from { transform: scale(1.11); filter: blur(7px); } to { transform: scale(1); filter: blur(0); } }
+@keyframes dropIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dockEntry { from { opacity: 0; transform: translate(-50%, 35px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes hintFloat { 0%,100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+@keyframes wavePulse { 0%,100% { opacity: .4; } 50% { opacity: 1; } }
+@keyframes drawerIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes drawerRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (max-width: 1100px) {
+  .ydokpreview_brandSub, .ydokpreview_profile { display: none; }
+  .ydokpreview_patientCard { left: 102px; width: 245px; }
+  .ydokpreview_vitalsPanel { width: 275px; }
+  .ydokpreview_voiceText { display: none; }
+  .ydokpreview_dock { width: calc(100% - 135px); }
+}
+@media (max-width: 700px) {
+  .ydokpreview_topBar { left: 10px; right: 10px; top: 10px; gap: 6px; }
+  .ydokpreview_brand { padding: 9px; }
+  .ydokpreview_brand strong { font-size: 15px; }
+  .ydokpreview_brand svg { width: 21px; }
+  .ydokpreview_topCenter { gap: 5px; }
+  .ydokpreview_status { display: none; }
+  .ydokpreview_modeButton, .ydokpreview_timer { padding: 10px; font-size: 10px; }
+  .ydokpreview_timer strong { font-size: 13px; }
+  .ydokpreview_timer small { display: none; }
+  .ydokpreview_toolRail { left: 10px; top: 84px; bottom: auto; width: 52px; padding: 7px 4px; gap: 6px; }
+  .ydokpreview_railButton { width: 41px; height: 41px; }
+  .ydokpreview_patientCard { top: 85px; left: 73px; width: 205px; padding: 11px; }
+  .ydokpreview_patientLine { margin-top: 8px; }
+  .ydokpreview_patientLine p { font-size: 9px; }
+  .ydokpreview_patientLine strong { font-size: 10px; }
+  .ydokpreview_avatarIcon { width: 29px; height: 29px; font-size: 9px; }
+  .ydokpreview_cardHeading { margin-bottom: 10px; font-size: 11px; }
+  .ydokpreview_vitalsPanel { top: auto; bottom: 102px; right: 9px; width: min(230px, 60vw); padding: 10px; }
+  .ydokpreview_vitalGrid { gap: 3px; }
+  .ydokpreview_vitalItem { min-height: 65px; padding: 6px 2px; }
+  .ydokpreview_vitalItem strong { font-size: 13px; }
+  .ydokpreview_vitalName { font-size: 9px; gap: 2px; }
+  .ydokpreview_vitalName svg { width: 11px; }
+  .ydokpreview_vitalsHeading { font-size: 11px; }
+  .ydokpreview_vitalsHeading small, .ydokpreview_vitalsDisclaimer { font-size: 8px; }
+  .ydokpreview_encounterCard { display: none; }
+  .ydokpreview_assistantArea { right: 12px; bottom: 310px; }
+  .ydokpreview_hintOrb { width: 55px; height: 55px; }
+  .ydokpreview_hintBubble { width: min(255px, 80vw); }
+  .ydokpreview_dock { width: calc(100% - 18px); bottom: 9px; padding: 7px; gap: 5px; }
+  .ydokpreview_dockButton { padding: 0 10px; min-height: 45px; }
+  .ydokpreview_dockButton span, .ydokpreview_endButton span, .ydokpreview_keyboardIcon { display: none; }
+  .ydokpreview_voiceButton { min-width: 75px; padding: 4px; min-height: 45px; }
+  .ydokpreview_micCircle { width: 35px; height: 35px; }
+  .ydokpreview_waveform { font-size: 16px; }
+  .ydokpreview_endButton { min-height: 45px; padding: 0 13px; }
+  .ydokpreview_demoLabel { right: 10px; bottom: 70px; font-size: 7px; }
+  .ydokpreview_toast { width: 90%; bottom: 80px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+
+/* F03 navigation refinements */
+.ydokpreview_toolRail {
+  bottom: auto !important;
+  height: auto !important;
+}
+.ydokpreview_modeButton {
+  cursor: default !important;
+  pointer-events: none;
+}
+.ydokpreview_modeButton:hover {
+  transform: none !important;
+}
+
+
+/* F03 SIDEBAR FINAL V2 */
+.ydokpreview_toolRail {
+  width: 68px !important;
+  height: auto !important;
+  bottom: auto !important;
+  max-height: calc(100dvh - 230px);
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch !important;
+  padding: 11px 9px !important;
+  gap: 9px !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: rgba(20, 63, 53, .88) !important;
+  border: 1px solid rgba(180, 228, 202, .27) !important;
+  border-radius: 24px;
+  transition: width .25s ease, box-shadow .25s ease;
+}
+
+.ydokpreview_toolRail.ydokpreview_railExpanded {
+  width: 248px !important;
+  padding: 11px !important;
+  box-shadow: 16px 20px 60px rgba(0,0,0,.30);
+}
+
+.ydokpreview_toolRail .ydokpreview_railButton,
+.ydokpreview_toolRail .ydokpreview_railLink {
+  box-sizing: border-box;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  width: 100%;
+  min-height: 47px;
+  height: 47px;
+  padding: 0 12px;
+  color: #e1eee5;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 14px;
+  background: rgba(255,255,255,.06);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background .2s ease, color .2s ease;
+}
+
+.ydokpreview_toolRail.ydokpreview_railExpanded .ydokpreview_railButton,
+.ydokpreview_toolRail.ydokpreview_railExpanded .ydokpreview_railLink {
+  justify-content: flex-start;
+}
+
+.ydokpreview_toolRail .ydokpreview_railButton svg,
+.ydokpreview_toolRail .ydokpreview_railLink svg {
+  flex-shrink: 0;
+}
+
+.ydokpreview_toolRail .ydokpreview_railButton:hover,
+.ydokpreview_toolRail .ydokpreview_railLink:hover {
+  background: rgba(205,246,220,.17);
+  color: #fff;
+}
+
+.ydokpreview_toolRail .ydokpreview_activeTool {
+  position: relative;
+  color: #193e33 !important;
+  border-color: #d3ead8 !important;
+  background: #d4e9dd !important;
+  box-shadow: none;
+}
+
+.ydokpreview_toolRail .ydokpreview_activeTool::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 11px;
+  bottom: 11px;
+  width: 3px;
+  border-radius: 4px;
+  background: #64dfbc;
+}
+
+.ydokpreview_railToggle {
+  background: rgba(255,255,255,.11) !important;
+}
+
+.ydokpreview_railLabel {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ydokpreview_railSpacer {
+  height: 1px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,.15);
+  margin: 5px 6px;
+}
+
+.ydokpreview_railLink {
+  text-decoration: none;
+}
+
+.ydokpreview_profileText {
+  min-width: 0;
+  max-width: 185px;
+}
+
+.ydokpreview_profileText strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ydokpreview_modeButton {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: default !important;
+}
+
+@media (max-width: 700px) {
+  .ydokpreview_toolRail {
+    width: 54px !important;
+    padding: 7px 5px !important;
+  }
+  .ydokpreview_toolRail.ydokpreview_railExpanded {
+    width: min(235px, 80vw) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ydokpreview_toolRail { transition: none !important; }
+}
