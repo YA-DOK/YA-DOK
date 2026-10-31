@@ -92,11 +92,13 @@ def test_create_session_starts_at_introduction():
     assert session.session_id
 
 
-def test_patient_question_requires_history_phase():
+def test_patient_question_available_without_phase_transition():
     session = make_test_session()
 
-    with pytest.raises(SimulationError):
-        ask_patient(session, "Do you have a fever?")
+    reply = ask_patient(session, "Do you have a fever?")
+    assert reply
+    assert session.current_phase == SimulationPhase.INTRODUCTION
+    assert session.events[-1].event_type == "patient_response"
 
 
 def test_patient_question_uses_responder():
@@ -380,3 +382,35 @@ def test_untimed_test_sessions_do_not_expire():
     assert not expire_test_session_if_due(
         session, now=session.events[0].timestamp + timedelta(days=7)
     )
+
+
+@pytest.mark.parametrize(
+    "phase",
+    [
+        SimulationPhase.INTRODUCTION,
+        SimulationPhase.HISTORY_TAKING,
+        SimulationPhase.EXAMINATION,
+        SimulationPhase.INVESTIGATIONS,
+        SimulationPhase.DIAGNOSIS_AND_PLAN,
+    ],
+)
+def test_clinical_actions_work_in_any_live_phase(phase):
+    session = make_test_session()
+    move_to_phase(session, phase)
+
+    assert ask_patient(session, "Hello")
+    assert request_examination(session, "temperature")["available"] is True
+    assert request_investigation(session, "CBC")["available"] is True
+    assert session.current_phase == phase
+
+
+def test_clinical_actions_rejected_after_completion():
+    session = make_test_session()
+    submit_diagnosis_and_plan(session, "Example diagnosis", "")
+    complete_session(session)
+    with pytest.raises(SimulationError):
+        ask_patient(session, "Hello")
+    with pytest.raises(SimulationError):
+        request_examination(session, "temperature")
+    with pytest.raises(SimulationError):
+        request_investigation(session, "CBC")

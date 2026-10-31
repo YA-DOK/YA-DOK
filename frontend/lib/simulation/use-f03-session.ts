@@ -239,6 +239,11 @@ export function useF03Session() {
         return false;
       }
 
+      if (diagnosis.trim().length > 3000 || plan.trim().length > 5000) {
+        setError("Diagnosis must be at most 3000 characters; treatment at most 5000.");
+        return false;
+      }
+
       const saved = await runAction("diagnosis", {
         diagnosis: diagnosis.trim(),
         treatment_plan: plan.trim(),

@@ -173,7 +173,7 @@ async def test_forbidden_owner_returns_not_found_and_no_call():
 
 
 @pytest.mark.parametrize("field,value", [
-    ("is_completed", True), ("is_paused", True), ("phase", "investigations"),
+    ("is_completed", True), ("is_paused", True),
     ("is_approved_version", False),
 ])
 @pytest.mark.asyncio
@@ -443,4 +443,18 @@ async def test_worsening_question_uses_model_and_worsening_fact_not_onset_rule()
     )
     assert result.fact_ids == ["cough__1"]
     assert result.model == "test-model"
+    assert model.calls == 1
+
+
+@pytest.mark.parametrize(
+    "phase", ["introduction", "history_taking", "examination", "investigations", "diagnosis_and_plan"]
+)
+@pytest.mark.asyncio
+async def test_chat_allowed_in_any_active_phase(phase):
+    from dataclasses import replace
+    repo, model = FakeRepo(), FakeModel()
+    repo.snapshot = replace(repo.snapshot, phase=phase)
+    response = await ChatService(repo, model).send(
+        session_id=repo.session_id, user_id=repo.owner, request=call(repo))
+    assert response.reply
     assert model.calls == 1

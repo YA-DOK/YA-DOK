@@ -82,11 +82,25 @@ async function request<T>(
         ? (data as { detail: unknown }).detail
         : null;
 
+    const validationMessage = Array.isArray(detail)
+      ? detail
+          .filter((entry): entry is { loc?: unknown; msg?: unknown } =>
+            entry !== null && typeof entry === "object")
+          .slice(0, 3)
+          .map((entry) => {
+            const location = Array.isArray(entry.loc)
+              ? entry.loc.filter((part): part is string | number =>
+                  typeof part === "string" || typeof part === "number").join(".")
+              : "request";
+            return `${location}: ${typeof entry.msg === "string" ? entry.msg : "Invalid value"}`;
+          })
+          .join("; ")
+      : "";
     throw new F03HttpError(
       response.status,
       typeof detail === "string"
         ? detail
-        : `Simulation API returned HTTP ${response.status}`
+        : validationMessage || `Simulation API returned HTTP ${response.status}`
     );
   }
 

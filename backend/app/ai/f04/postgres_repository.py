@@ -26,7 +26,7 @@ from app.models.simulation_action_request import SimulationActionRequestModel
 from app.models.simulation_session import SimulationSessionModel
 from app.services.simulation_pg_service import PostgresSimulationService, _hydrate
 from app.simulation.action_request import create_action_identity
-from app.simulation.engine import SimulationMessage, SimulationPhase
+from app.simulation.engine import SimulationMessage
 
 LEASE_SECONDS = 60  # Larger than model timeout. Expired claims are recoverable.
 MAX_QUESTIONS_PER_SESSION = 80
@@ -71,8 +71,8 @@ def _validate_open(row) -> None:
         raise failure(404, "SESSION_NOT_FOUND", "Simulation session not found.")
     if row.case_version_id is None:
         raise failure(409, "CASE_NOT_PINNED", "Start the simulation from a published case.")
-    if row.is_completed or row.is_paused or row.current_phase != SimulationPhase.HISTORY_TAKING.value:
-        raise failure(409, "CHAT_NOT_ALLOWED", "Patient chat is only available during active history taking.")
+    if row.is_completed or row.is_paused:
+        raise failure(409, "CHAT_NOT_ALLOWED", "Patient chat requires an active, unpaused session.")
     # F04 uses its own reservation path: reject late chats here, too.
     state = row.state_json or {}
     minutes = state.get("duration_minutes")

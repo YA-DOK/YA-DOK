@@ -205,7 +205,7 @@ def test_examination_returns_unavailable_when_result_missing():
     assert response.json()["result"] is None
 
 
-def test_examination_rejected_in_wrong_phase():
+def test_examination_does_not_require_phase_transition():
     session_id = create_test_session()
 
     response = client.post(
@@ -213,7 +213,9 @@ def test_examination_rejected_in_wrong_phase():
         json={"examination_name": "General examination"},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 200
+    assert response.json()["available"] is False
+    assert client.get(f"/api/v1/simulation/sessions/{session_id}").json()["current_phase"] == "introduction"
 
 
 def test_investigation_returns_unavailable_when_result_missing():

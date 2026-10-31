@@ -364,10 +364,7 @@ def ask_patient(
     responder: Callable[..., str] | None = None,
 ) -> str:
     """Record a student's question and obtain a patient response."""
-    _ensure_phase(
-        session,
-        SimulationPhase.HISTORY_TAKING,
-    )
+    _ensure_active(session)
 
     question = question.strip()
 
@@ -450,10 +447,7 @@ async def ask_patient_async(
     patient_agent: Any,
 ) -> str:
     """Ask the patient using an async PatientAgent."""
-    _ensure_phase(
-        session,
-        SimulationPhase.HISTORY_TAKING,
-    )
+    _ensure_active(session)
 
     question = question.strip()
 
@@ -565,10 +559,7 @@ def request_examination(
     examination_name: str,
 ) -> dict[str, Any]:
     """Return examination findings only when they exist in the case."""
-    _ensure_phase(
-        session,
-        SimulationPhase.EXAMINATION,
-    )
+    _ensure_active(session)
 
     examination_name = examination_name.strip()
 
@@ -655,10 +646,7 @@ def request_investigation(
     investigation_name: str,
 ) -> dict[str, Any]:
     """Return a test result only if it exists in the supplied case."""
-    _ensure_phase(
-        session,
-        SimulationPhase.INVESTIGATIONS,
-    )
+    _ensure_active(session)
 
     investigation_name = investigation_name.strip()
 
