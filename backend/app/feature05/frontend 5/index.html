@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clinical Examination and Investigations</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 id="title">Loading case</h1>
+      <p class="pt" id="pt"></p>
+    </div>
+    <div class="casepick">
+      <label for="case">Case</label>
+      <select id="case">
+        <option value="case_002">Case 002</option>
+        <option value="case_001">Case 001</option>
+      </select>
+      <button class="ghost" id="restart" type="button">Restart session</button>
+    </div>
+  </header>
+  <p class="complaint" id="complaint"></p>
+  <details class="hist"><summary>Patient history</summary><div id="history"></div></details>
+  <div class="error" id="error" role="alert" hidden></div>
+  <div class="sum" id="sum"></div>
+
+  <div class="grid">
+    <div>
+      <div class="panel">
+        <h2>Investigation catalog</h2>
+        <div class="filters">
+          <input type="search" id="q" placeholder="Search tests (CBC, CRP, chest)" aria-label="Search tests">
+          <select id="cat" aria-label="Category"><option value="">All categories</option></select>
+        </div>
+        <div class="catalog" id="catalog"></div>
+        <p class="actions"><button id="order" type="button">Order selected</button> <button class="ghost" id="clear" type="button">Clear</button></p>
+      </div>
+      <div class="panel">
+        <h2>Clinical examination</h2>
+        <div id="exams"></div>
+        <div id="findings"><p class="empty">Choose an examination to see the finding.</p></div>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <h2>Results</h2>
+        <p class="notice" id="notice" role="status"></p>
+        <div id="results"><p class="empty">No results yet. Select tests and order them.</p></div>
+      </div>
+      <div class="panel">
+        <h2>Session events (saved for evaluation)</h2>
+        <div class="log" id="log"><p class="empty">Empty.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <div class="top2"><strong id="dtitle">Image</strong><button class="ghost" id="dclose" type="button">Close</button></div>
+  <p class="meta" id="dlink">Private link, time limited</p>
+  <p><button class="ghost" id="zin" type="button">Zoom in</button> <button class="ghost" id="zout" type="button">Zoom out</button> <button class="ghost" id="zreset" type="button">Reset</button></p>
+  <div class="zoombox"><img id="dimg" alt="Medical image"></div>
+</dialog>
+</body>
+</html>
