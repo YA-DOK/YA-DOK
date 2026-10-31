@@ -1,8 +1,8 @@
+import json
 from dataclasses import dataclass
 from hashlib import sha256
 from typing import Any, Literal
 from uuid import UUID
-import json
 
 
 class IdempotencyConflict(ValueError):

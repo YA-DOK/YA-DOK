@@ -1,10 +1,11 @@
 
+import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 from uuid import uuid4
-import json
 
 
 class SimulationPhase(str, Enum):

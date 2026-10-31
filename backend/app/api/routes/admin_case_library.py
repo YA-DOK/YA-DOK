@@ -62,7 +62,7 @@ def _view(db: Session, case: ClinicalCase) -> AdminCaseSummary:
         try:
             bp = CaseBlueprintV32.model_validate(ver.blueprint)
             issues = publication_issues(bp) + _public_metadata_issues(bp)
-        except Exception:
+        except Exception:  # noqa: BLE001
             bp = None
             issues = ["Blueprint validation failed"]
         audit = review_lookup.get(str(ver.id))

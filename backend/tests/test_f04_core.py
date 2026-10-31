@@ -4,6 +4,8 @@ import json
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException
+
 from app.ai.f04.blueprint import project_history
 from app.ai.f04.contracts import (
     PatientChatResult,
@@ -14,7 +16,6 @@ from app.ai.f04.contracts import (
 )
 from app.ai.f04.provider import ProviderUnavailable
 from app.ai.f04.service import ChatService, contains_hidden_answer, numbers_grounded
-from fastapi import HTTPException
 
 
 def blueprint():

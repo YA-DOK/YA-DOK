@@ -16,8 +16,6 @@ from app.simulation.action_request import IdempotencyConflict
 from app.simulation.engine import (
     SimulationPhase,
     advance_phase,
-    pause_session,
-    resume_session,
 )
 
 
@@ -178,9 +176,10 @@ def test_pg_concurrent_duplicate_request(pg):
 
 def test_pg_real_http_session_lifecycle(pg, monkeypatch):
     from fastapi.testclient import TestClient
-    from app.main import app
+
     from app.api.routes import simulation as routes
     from app.core.security import get_current_user
+    from app.main import app
 
     service, owner, stranger, _ = pg
     old_overrides = app.dependency_overrides.copy()

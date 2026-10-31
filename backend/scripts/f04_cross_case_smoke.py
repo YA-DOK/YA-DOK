@@ -20,6 +20,8 @@ from uuid import uuid4
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import httpx
+from fastapi import HTTPException
+
 from app.ai.f04.blueprint import project_history
 from app.ai.f04.contracts import (
     PatientReply,
@@ -32,7 +34,6 @@ from app.ai.f04.coverage import question_parts
 from app.ai.f04.provider import ModelSettings, OpenRouterTextModel
 from app.ai.f04.service import ChatService
 from app.core.config import settings
-from fastapi import HTTPException
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")

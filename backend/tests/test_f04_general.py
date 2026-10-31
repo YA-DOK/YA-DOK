@@ -7,11 +7,12 @@ from __future__ import annotations
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException
+from test_f04_core import FakeModel, FakeRepo
+
 from app.ai.f04.contracts import PatientChatResult, QuestionPart, SendMessageRequest
 from app.ai.f04.coverage import question_parts, spans_accounted_for
 from app.ai.f04.service import ChatService
-from fastapi import HTTPException
-from test_f04_core import FakeModel, FakeRepo
 
 
 def question(text: str) -> SendMessageRequest:

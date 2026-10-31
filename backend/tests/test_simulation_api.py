@@ -2,11 +2,10 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
 from app.api.routes import simulation
 from app.core.security import get_current_user
+from app.main import app
 from app.simulation.engine import SimulationPhase
-
 
 TEST_USER = {
     "id": "test-user-1",

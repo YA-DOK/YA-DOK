@@ -4,6 +4,7 @@ import json
 
 import httpx
 import pytest
+
 from app.ai.f04.provider import (
     InvalidModelOutput,
     ModelSettings,

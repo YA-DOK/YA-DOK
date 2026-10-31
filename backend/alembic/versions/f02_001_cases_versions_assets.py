@@ -7,9 +7,10 @@ No medical records or seed data are included in this migration.
 """
 from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision: str = "f02_001"
 down_revision: str | Sequence[str] | None = "abbade5daee8"

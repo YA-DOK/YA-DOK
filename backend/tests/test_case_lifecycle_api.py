@@ -10,8 +10,8 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.case import CaseVersion, ClinicalCase
 from app.models.case_review import CaseReviewApproval
-from app.services.case_review import blueprint_hash
 from app.models.profile import Profile
+from app.services.case_review import blueprint_hash
 
 USER_ID = str(uuid4())
 

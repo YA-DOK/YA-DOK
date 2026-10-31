@@ -7,13 +7,14 @@ from sqlalchemy.engine import make_url
 from alembic import context
 from app.core.config import settings
 from app.core.database import Base
+from app.models.case import CaseAsset, CaseVersion, ClinicalCase  # noqa: F401
+from app.models.case_review import CaseReviewApproval  # noqa: F401
 from app.models.profile import Profile  # noqa: F401
-from app.models.simulation_session import SimulationSessionModel
-from app.models.simulation_event import SimulationEventModel
-from app.models.simulation_action_request import SimulationActionRequestModel
-
-from app.models.case import ClinicalCase, CaseVersion, CaseAsset
-from app.models.case_review import CaseReviewApproval
+from app.models.simulation_action_request import (
+    SimulationActionRequestModel,  # noqa: F401
+)
+from app.models.simulation_event import SimulationEventModel  # noqa: F401
+from app.models.simulation_session import SimulationSessionModel  # noqa: F401
 
 config = context.config
 
