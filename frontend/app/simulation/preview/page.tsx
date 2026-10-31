@@ -482,7 +482,7 @@ export default function SimulationPreview() {
           </button>
         </form>
 
-        <button className={styles.endButton} onClick={() => setConfirmEnd(true)} disabled={ended}>
+        <button className={styles.endButton} onClick={() => setConfirmEnd(true)} disabled={!liveSession || busy || paused || ended}>
           <span>End Session</span>
           <ChevronRight size={18} />
         </button>
@@ -565,10 +565,10 @@ export default function SimulationPreview() {
           <div className={`${styles.glass} ${styles.modal}`} role="dialog" aria-modal="true" aria-labelledby="end-title">
             <h2 id="end-title">Complete this session?</h2>
             <p>
-              Finish the previous phases, then submit your diagnosis and
-              treatment plan to complete this saved session.
+              You can finish at any point. Submit your diagnosis; skipped clinical
+              steps will remain recorded as not performed. Treatment is optional.
             </p>
-            {currentPhase === "diagnosis_and_plan" && !liveSession?.diagnosis && (
+            {!liveSession?.diagnosis && (
               <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
                 <textarea
                   aria-label="Diagnosis"
@@ -578,8 +578,8 @@ export default function SimulationPreview() {
                   style={{ padding: 12, background: "#18342d", color: "white", borderRadius: 10 }}
                 />
                 <textarea
-                  aria-label="Treatment plan"
-                  placeholder="Your treatment plan"
+                  aria-label="Treatment plan (optional)"
+                  placeholder="Treatment plan (optional)"
                   value={planText}
                   onChange={(e) => setPlanText(e.target.value)}
                   style={{ padding: 12, background: "#18342d", color: "white", borderRadius: 10 }}
@@ -590,7 +590,7 @@ export default function SimulationPreview() {
               <button className={styles.dockButton} onClick={() => setConfirmEnd(false)}>Cancel</button>
               <button
               className={styles.endButton}
-              disabled={!liveSession || busy || currentPhase !== "diagnosis_and_plan"}
+              disabled={!liveSession || busy || paused || ended}
               onClick={() => {
                 void finish(diagnosisText, planText).then((done) => {
                   if (done) setConfirmEnd(false);

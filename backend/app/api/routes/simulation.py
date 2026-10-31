@@ -202,7 +202,7 @@ class InvestigationRequest(BaseModel):
 
 class DiagnosisRequest(BaseModel):
     diagnosis: str = Field(..., min_length=1, max_length=3000)
-    treatment_plan: str = Field(..., min_length=1, max_length=5000)
+    treatment_plan: str = Field(default="", max_length=5000)
 
 
 def get_session(session_id: str) -> SimulationSession:

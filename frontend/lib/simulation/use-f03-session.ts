@@ -192,14 +192,14 @@ export function useF03Session() {
   }
 
   async function finish(diagnosis: string, plan: string): Promise<boolean> {
-    if (!session || session.current_phase !== "diagnosis_and_plan") {
-      setError("Complete the earlier phases before ending this session.");
+    if (!session || session.is_completed || session.is_paused) {
+      setError("Resume an active session before ending it.");
       return false;
     }
 
-    if (!session.diagnosis || !session.treatment_plan) {
-      if (!diagnosis.trim() || !plan.trim()) {
-        setError("Diagnosis and treatment plan are required.");
+    if (!session.diagnosis) {
+      if (!diagnosis.trim()) {
+        setError("A diagnosis is required to complete the session.");
         return false;
       }
 

@@ -301,3 +301,40 @@ def test_cannot_bypass_diagnosis_with_direct_phase_transition():
     assert session.current_phase == SimulationPhase.DIAGNOSIS_AND_PLAN
     assert session.is_completed is False
     assert len(session.events) == initial_events
+
+
+@pytest.mark.parametrize(
+    "starting_phase",
+    [
+        SimulationPhase.INTRODUCTION,
+        SimulationPhase.HISTORY_TAKING,
+        SimulationPhase.EXAMINATION,
+        SimulationPhase.INVESTIGATIONS,
+        SimulationPhase.DIAGNOSIS_AND_PLAN,
+    ],
+)
+def test_early_finish_from_any_phase(starting_phase):
+    session = make_test_session()
+    move_to_phase(session, starting_phase)
+    submit_diagnosis_and_plan(session, "Provisional diagnosis", "")
+
+    result = complete_session(session)
+
+    assert result["is_completed"] is True
+    assert result["current_phase"] == "completed"
+    assert result["diagnosis"] == "Provisional diagnosis"
+    assert result["treatment_plan"] == ""
+    assert [event.event_type for event in session.events][-2:] == [
+        "phase_changed", "session_completed",
+    ]
+    assert session.events[-2].details["from_phase"] == starting_phase.value
+    with pytest.raises(SimulationError):
+        complete_session(session)
+
+
+def test_early_completion_still_requires_diagnosis():
+    session = make_test_session()
+    with pytest.raises(SimulationError):
+        complete_session(session)
+    assert session.current_phase == SimulationPhase.INTRODUCTION
+    assert session.is_completed is False

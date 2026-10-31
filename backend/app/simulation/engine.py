@@ -270,21 +270,16 @@ def advance_phase(
     session: SimulationSession,
     requested_phase: SimulationPhase,
 ) -> SimulationPhase:
-    """Advance the session by exactly one phase and log it."""
+    """Advance sequentially, except completion after a submitted diagnosis."""
     _ensure_active(session)
 
     previous_phase = session.current_phase
-    next_phase = transition_phase(
-        previous_phase,
-        requested_phase,
-    )
-
-    if next_phase == SimulationPhase.COMPLETED and (
-        not session.diagnosis or not session.treatment_plan
-    ):
-        raise SimulationError(
-            "Submit a diagnosis and treatment plan before completion."
-        )
+    if requested_phase == SimulationPhase.COMPLETED:
+        if not session.diagnosis:
+            raise SimulationError("Submit a diagnosis before completion.")
+        next_phase = SimulationPhase.COMPLETED
+    else:
+        next_phase = transition_phase(previous_phase, requested_phase)
 
     session.current_phase = next_phase
 
@@ -681,20 +676,14 @@ def submit_diagnosis_and_plan(
     diagnosis: str,
     treatment_plan: str,
 ) -> dict[str, str]:
-    """Record the student's proposed diagnosis and plan."""
-    _ensure_phase(
-        session,
-        SimulationPhase.DIAGNOSIS_AND_PLAN,
-    )
+    """Record a diagnosis in any active phase; treatment is optional."""
+    _ensure_active(session)
 
     diagnosis = diagnosis.strip()
     treatment_plan = treatment_plan.strip()
 
     if not diagnosis:
         raise SimulationError("Diagnosis cannot be empty.")
-
-    if not treatment_plan:
-        raise SimulationError("Treatment plan cannot be empty.")
 
     session.diagnosis = diagnosis
     session.treatment_plan = treatment_plan
@@ -727,20 +716,7 @@ def submit_diagnosis_and_plan(
 def complete_session(
     session: SimulationSession,
 ) -> dict[str, Any]:
-    """Complete the session after the diagnosis and plan phase."""
-    _ensure_phase(
-        session,
-        SimulationPhase.DIAGNOSIS_AND_PLAN,
-    )
-
-    if not session.diagnosis or not session.treatment_plan:
-        raise SimulationError(
-            "Submit a diagnosis and treatment plan before completion."
-        )
-
-    advance_phase(
-        session,
-        SimulationPhase.COMPLETED,
-    )
+    """Complete an active session after diagnosis, regardless of phase."""
+    advance_phase(session, SimulationPhase.COMPLETED)
 
     return session.to_dict()

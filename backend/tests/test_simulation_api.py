@@ -378,3 +378,27 @@ def test_user_cannot_pause_another_users_simulation():
         app.dependency_overrides[get_current_user] = (
             override_get_current_user
         )
+
+
+def test_early_diagnosis_without_treatment_via_api():
+    session_id = create_test_session()
+    diagnosis_response = client.post(
+        f"/api/v1/simulation/sessions/{session_id}/diagnosis",
+        json={"diagnosis": "Provisional early diagnosis"},
+    )
+    assert diagnosis_response.status_code == 200
+    assert diagnosis_response.json()["treatment_plan"] == ""
+
+    complete_response = client.post(
+        f"/api/v1/simulation/sessions/{session_id}/complete"
+    )
+    assert complete_response.status_code == 200
+    assert complete_response.json()["current_phase"] == "completed"
+    assert complete_response.json()["is_completed"] is True
+
+    reloaded = client.get(f"/api/v1/simulation/sessions/{session_id}")
+    assert reloaded.status_code == 200
+    assert reloaded.json()["diagnosis"] == "Provisional early diagnosis"
+    assert [e["event_type"] for e in reloaded.json()["events"]][-2:] == [
+        "phase_changed", "session_completed",
+    ]
