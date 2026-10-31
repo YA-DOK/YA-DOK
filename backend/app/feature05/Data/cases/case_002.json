@@ -1,0 +1,183 @@
+{
+  "_readme": {
+    "purpose": "Case blueprint organized by clinical logic (identity, timeline, vitals trend, labs trend, treatment, outcome) instead of by paper page order. Same structure as case_blueprint (3).json, applied to a second case.",
+    "traceability": "Every data point carries a source_page field referencing the original page name, so nothing loses its origin even though the structure is now clinical, not page-based.",
+    "privacy_note": "Name, national ID, and address are deliberately excluded. Only age, sex, and weight are retained, per instruction, for database storage.",
+    "legibility_note": "This source document is far harder to read than the first case (dense cursive handwriting, several pages crossed out). Fields are marked 'confirmed' only when clearly legible/printed; everything else is 'best_guess' and needs verification against the original scan before being trusted.",
+    "source_pages_reference": [
+      "pain_assessment_management_sheet",
+      "er_admission_ticket",
+      "abcde_admission_form",
+      "admission_note_handwritten",
+      "doctors_orders_pages",
+      "progress_note_chest_exam",
+      "progress_note_discharge",
+      "xray_image",
+      "blood_gas_report",
+      "cbc_report_1",
+      "cbc_report_2",
+      "chemistry_request_handwritten",
+      "lab_flow_sheet",
+      "pharmacy_antibiotic_evaluation",
+      "hospital_statistics_discharge_form",
+      "nursing_admission_assessment",
+      "fall_risk_assessment_tool",
+      "flacc_pain_scale",
+      "wong_baker_pain_scale",
+      "vital_signs_chart",
+      "nursing_notes_pages"
+    ]
+  },
+
+  "identity": {
+    "sex": "female",
+    "age": "11",
+    "weight_kg": 37,
+    "source_page": ["pharmacy_antibiotic_evaluation", "nursing_admission_assessment"]
+  },
+
+  "encounter": {
+    "hospital_name": "Kafr El Dawar General Hospital",
+    "admission_date": "not confidently determined from scan (handwritten date partially legible, approx. early August 2026)",
+    "admission_date_confidence": "best_guess",
+    "discharge_date": "not confidently determined from scan",
+    "discharge_date_confidence": "best_guess",
+    "outcome": "improved",
+    "outcome_confidence": "best_guess",
+    "source_page": "hospital_statistics_discharge_form"
+  },
+
+  "presenting_problem": {
+    "chief_complaint": "fever and cough for 3 days, failed home treatment",
+    "chief_complaint_confidence": "confirmed",
+    "present_history": "known bronchial asthma; reported 3 previous hospital admissions due to pneumonia",
+    "source_page": "admission_note_handwritten"
+  },
+
+  "clinical_timeline": [
+    {
+      "event_type": "admission_exam",
+      "findings": {
+        "chest": "bilateral air entry, bilateral wheezes",
+        "respiratory_signs": "tachypnea, intercostal recession (ICR)"
+      },
+      "findings_confidence": "confirmed",
+      "source_page": ["admission_note_handwritten", "progress_note_chest_exam"]
+    },
+    {
+      "event_type": "imaging",
+      "findings": {
+        "modality": "x-ray",
+        "body_part": "chest",
+        "result": "bronchopneumonia",
+        "performed_at": "KD General Hospital"
+      },
+      "findings_confidence": "confirmed",
+      "source_page": ["admission_note_handwritten", "xray_image"]
+    },
+    {
+      "event_type": "pain_assessment",
+      "findings": {
+        "flacc_score": "3/10 (severe) at one recorded point",
+        "wong_baker_faces_score": "approximately 8/10 (severe) at one recorded point"
+      },
+      "findings_confidence": "confirmed",
+      "source_page": ["flacc_pain_scale", "wong_baker_pain_scale"]
+    },
+    {
+      "event_type": "consultation",
+      "findings": {
+        "specialty": "clinical pharmacy",
+        "reason": "antibiotic stewardship review",
+        "note": "requested follow-up CBC/CRP; CRP came back negative; recommended discontinuing antibiotic"
+      },
+      "findings_confidence": "best_guess",
+      "source_page": "pharmacy_antibiotic_evaluation"
+    },
+    {
+      "event_type": "progress_note",
+      "findings": {
+        "note": "improvement noted - clear chest, no wheezes, normal heart sounds, good general condition"
+      },
+      "findings_confidence": "best_guess",
+      "source_page": "progress_note_discharge"
+    }
+  ],
+
+  "vitals_trend": {
+    "unit_notes": "temperature in Celsius, respiration_rate in breaths/min , pulse_rate in beats/min",
+    "readings": [37.3,20,90],
+    "readings_note": "a dense daily vitals table exists in the source (pulse/temperature/respiration/O2 saturation across multiple days), but the handwriting is too tightly packed and overlapping to transcribe individual readings with confidence. Not populated here to avoid presenting guessed numbers as data.",
+    "trend_summary": "not available with confidence - see readings_note",
+    "source_page": "vital_signs_chart"
+  },
+
+  "labs_trend": {
+    "chemistry_series": [
+      {
+        "sodium": 177,
+        "potassium": 2.8,
+        "calcium": 0.84,
+        "glucose": 116,
+        "Lactic Acid":1.6,
+        "Hematocrit":36,
+        "Bicarbonate":20.3,
+
+        "source_page": "lab_request_form_1"
+      }
+    ],
+    "flow_sheet_crosscheck": {
+      "hemoglobin": 12.5,
+      "rbc": 4.62,
+      "wbc": 11.5,
+      "platelets": 276,
+      "source_page": "lab_flow_sheet",
+      "note": "used to cross-validate values against cbc_automated_report and lab_request forms"
+    },
+    "blood_gas": {
+      "ph": 7.41,
+      "pco2_mmHg": 32,
+      "po2_mmHg": 48,
+      "confidence": "best_guess",
+      "source_page": "blood_gas_report"
+    },
+    "hematology": {
+      "wbc_approx": 4.7,
+      "platelets_approx": 363,
+      "flag": "suspected anemia (per analyzer interpretation)",
+      "confidence": "best_guess",
+      "source_page": "cbc_report_2"
+    },
+    "inflammatory_markers": {
+      "wbc_per_pharmacy_note_approx": 11.5,
+      "crp_result": "negative",
+      "confidence": "best_guess",
+      "source_page": "pharmacy_antibiotic_evaluation"
+    },
+    "trend_summary": "not enough confidently-legible serial values to describe a trend; single-point labs suggest possible early inflammatory response (elevated WBC per pharmacy note) that resolved (CRP negative on follow-up)"
+  },
+
+  "treatment": {
+    "during_admission_medications": [
+      { "drug": "IV antibiotic (specific agent not confidently legible)", "confidence": "confirmed (fact of IV antibiotic use)", "source_page": "admission_note_handwritten" },
+      { "drug": "nebulizers", "confidence": "confirmed", "source_page": "admission_note_handwritten" },
+      { "drug": "Dexamethasone (name partially legible)", "confidence": "best_guess", "source_page": "pharmacy_antibiotic_evaluation" },
+      { "drug": "Azithromycin (name partially legible)", "confidence": "best_guess", "source_page": "pharmacy_antibiotic_evaluation" }
+    ],
+    "pharmacist_recommendation": "discontinue antibiotic given negative CRP and no clear bacterial indication after reassessment",
+    "pharmacist_recommendation_confidence": "best_guess",
+    "ordered_tests": {
+      "tests": ["CBC", "CRP"],
+      "source_page": "doctors_orders_pages"
+    },
+    "source_page": "pharmacy_antibiotic_evaluation"
+  },
+
+  "outcome_summary": {
+    "final_status": "improved",
+    "final_status_confidence": "best_guess",
+    "hospital_course": "admitted with fever/cough on background of known bronchial asthma and prior pneumonia admissions; exam and x-ray consistent with bronchopneumonia; treated with IV antibiotic and nebulizers; antibiotic later reconsidered after negative CRP; chest reportedly clear before discharge",
+    "hospital_course_confidence": "best_guess",
+    "source_page": ["admission_note_handwritten", "pharmacy_antibiotic_evaluation", "progress_note_discharge", "hospital_statistics_discharge_form"]
+  }
+}

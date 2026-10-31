@@ -1,0 +1,50 @@
+{
+  "id": "case_001",
+  "title": "Respiratory Case",
+  "description": "A simulated patient with respiratory symptoms.",
+  "available_investigations": [
+    "general_exam",
+    "respiratory_exam",
+    "cbc",
+    "chest_xray"
+  ],
+  "investigation_results": {
+    "general_exam": {
+      "findings": "Patient is alert and responsive.",
+      "measurements": []
+    },
+    "respiratory_exam": {
+      "findings": "Reduced breath sounds on the right side.",
+      "measurements": []
+    },
+    "cbc": {
+      "findings": "Example CBC report for software testing only.",
+      "measurements": [],
+      "release_delay_seconds": 30
+    },
+    "chest_xray": {
+      "findings": "Case-defined X-ray findings",
+      
+      "image_path":  "Data/medical_images/xray_001.jpg",
+      "release_delay_seconds": 60
+    }
+  },
+  "educational_relevance": {
+    "general_exam": {
+      "relevance": "essential",
+      "penalty": 0
+    },
+    "respiratory_exam": {
+      "relevance": "essential",
+      "penalty": 0
+    },
+    "cbc": {
+      "relevance": "relevant",
+      "penalty": 0
+    },
+    "chest_xray": {
+      "relevance": "unnecessary",
+      "penalty": 5
+    }
+  }
+}
