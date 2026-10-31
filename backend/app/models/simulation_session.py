@@ -38,6 +38,7 @@ class SimulationSessionModel(Base):
 
     case_version_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
+        ForeignKey("case_versions.id", ondelete="RESTRICT"),
         nullable=True,
     )
 

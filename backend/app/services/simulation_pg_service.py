@@ -31,6 +31,13 @@ class SessionNotFound(Exception):
 def _state(session: SimulationSession) -> dict[str, Any]:
     state = SimulationService._session_state(session)
     state["mode"] = getattr(session, "mode", "training")
+    for key in (
+        "case_code",
+        "case_version_id",
+        "version_number",
+        "duration_minutes",
+    ):
+        state[key] = getattr(session, key, None)
     return state
 
 
@@ -77,6 +84,13 @@ def _hydrate(row, events) -> SimulationSession:
         )
 
     session.mode = state.get("mode", "training")
+    for key in (
+        "case_code",
+        "case_version_id",
+        "version_number",
+        "duration_minutes",
+    ):
+        setattr(session, key, state.get(key))
     return session
 
 

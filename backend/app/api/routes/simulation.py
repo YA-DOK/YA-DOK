@@ -81,7 +81,30 @@ def _isolated_pg_factory():
     )
 
 
+@lru_cache(maxsize=1)
+def _shared_pg_factory():
+    from app.core.database import engine
+
+    if engine is None:
+        raise HTTPException(
+            503, "PostgreSQL database is not configured."
+        )
+
+    return sessionmaker(
+        bind=engine,
+        autoflush=False,
+        expire_on_commit=False,
+    )
+
+
 def _pg_service():
+    if (
+        os.getenv("YA_DOK_F03_RUNTIME") == "live"
+        or settings.app_env not in ("development", "test")
+    ):
+        return PostgresSimulationService(_shared_pg_factory())
+
+
     if os.getenv("YA_DOK_F03_STORAGE") != "postgres":
         if settings.app_env != "development":
             raise HTTPException(
@@ -308,6 +331,7 @@ def start_simulation(
     if (pg := _pg_service()) is not None:
         if (
             settings.app_env != "development"
+            or os.getenv("YA_DOK_F03_RUNTIME") == "live"
             or os.getenv("F03_ALLOW_SYNTHETIC") != "1"
         ):
             raise HTTPException(
@@ -387,6 +411,10 @@ def get_simulation(
             return {
                 **loaded.to_dict(),
                 "mode": getattr(loaded, "mode", "training"),
+                "case_code": getattr(loaded, "case_code", None),
+                "case_version_id": getattr(loaded, "case_version_id", None),
+                "version_number": getattr(loaded, "version_number", None),
+                "duration_minutes": getattr(loaded, "duration_minutes", None),
             }
         except (SessionNotFound, ValueError, TypeError) as exc:
             raise HTTPException(

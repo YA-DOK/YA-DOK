@@ -7,6 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
+    clinical_reviewer_user_ids: str = ""
     app_env: str = "development"
     cors_origins: list[str] = ["http://localhost:3000"]
 

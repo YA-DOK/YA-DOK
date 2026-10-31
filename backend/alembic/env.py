@@ -2,6 +2,7 @@
 from logging.config import fileConfig
 
 from sqlalchemy import create_engine, pool
+from sqlalchemy.engine import make_url
 
 from alembic import context
 from app.core.config import settings
@@ -10,6 +11,9 @@ from app.models.profile import Profile  # noqa: F401
 from app.models.simulation_session import SimulationSessionModel
 from app.models.simulation_event import SimulationEventModel
 from app.models.simulation_action_request import SimulationActionRequestModel
+
+from app.models.case import ClinicalCase, CaseVersion, CaseAsset
+from app.models.case_review import CaseReviewApproval
 
 config = context.config
 
@@ -64,7 +68,7 @@ def run_migrations_online():
     connectable = create_engine(
         get_migration_url(),
         poolclass=pool.NullPool,
-        connect_args={"sslmode": "require"},
+        connect_args={"sslmode": "disable" if make_url(get_migration_url()).host in ("localhost", "127.0.0.1", "::1") else "require"},
     )
 
     try:

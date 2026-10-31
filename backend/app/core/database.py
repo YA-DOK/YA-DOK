@@ -2,6 +2,7 @@
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
@@ -15,7 +16,7 @@ if settings.database_url:
     engine = create_engine(
         settings.database_url,
         pool_pre_ping=True,
-        connect_args={"sslmode": "require"},
+        connect_args={"sslmode": ("disable" if make_url(settings.database_url).host in ("localhost", "127.0.0.1", "::1") else "require")},
     )
 
     # Database sessions

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -68,6 +68,7 @@ export function useF03Session() {
   const [elapsed, setElapsed] = useState(0);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
+  const [caseCode, setCaseCode] = useState("");
 
   const booted = useRef(false);
   const storageKey = useRef("");
@@ -84,22 +85,20 @@ export function useF03Session() {
         const selected: F03Mode =
           params.get("mode") === "test" ? "test" : "training";
 
-        if (params.get("case") !== "UI-DEMO-PED-001") {
-          throw new Error("Open the demo case from the Case Library.");
+        const caseCode = params.get("case") ?? "";
+        if (!/^[A-Za-z0-9_-]{3,120}$/.test(caseCode)) {
+          throw new Error("Select a valid case from the Case Library.");
         }
+        setCaseCode(caseCode);
+
 
         const { data: { user } } = await createClient().auth.getUser();
 
         if (!user) throw new Error("Please log in first.");
 
-        const ready = await f03Live.ready();
-
-        if (!ready.ready || ready.storage !== "postgres") {
-          throw new Error("Isolated PostgreSQL is not ready.");
-        }
 
         const key =
-          `yadok:f03:${user.id}:UI-DEMO-PED-001:${selected}`;
+          `yadok:f03:${user.id}:${caseCode}:${selected}`;
 
         storageKey.current = key;
 
@@ -109,6 +108,14 @@ export function useF03Session() {
         if (savedId) {
           try {
             loaded = await f03Live.get(savedId);
+            if (
+              loaded.case_code !== caseCode ||
+              loaded.mode !== selected ||
+              !loaded.case_version_id
+            ) {
+              loaded = null;
+              sessionStorage.removeItem(key);
+            }
           } catch (err) {
             if (!(err instanceof F03HttpError) || err.status !== 404) {
               throw err;
@@ -117,7 +124,7 @@ export function useF03Session() {
           }
         }
 
-        const current = loaded ?? await f03Live.startDemo(selected);
+        const current = loaded ?? await f03Live.startPublished(caseCode, selected);
 
         if (!loaded) sessionStorage.setItem(key, current.session_id);
 
@@ -219,6 +226,7 @@ export function useF03Session() {
 
   return {
     session,
+    caseCode,
     mode,
     elapsed,
     busy,

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useF03Session } from "@/lib/simulation/use-f03-session";
 import { createClient } from "@/lib/supabase/client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity, ClipboardList, FlaskConical, HeartPulse,
   Image as ImageIcon, Lightbulb, Menu, MessageCircle,
@@ -110,11 +110,11 @@ const tools = [
 ] as const;
 
 const vitals = [
-  { name: "Heart Rate", short: "HR", value: "92", unit: "bpm", Icon: HeartPulse },
-  { name: "Respiratory Rate", short: "RR", value: "20", unit: "/min", Icon: Activity },
-  { name: "Temperature", short: "Temp", value: "36.8", unit: "°C", Icon: Thermometer },
-  { name: "Blood Pressure", short: "BP", value: "102/68", unit: "mmHg", Icon: HeartPulse },
-  { name: "Oxygen Saturation", short: "SpO₂", value: "98", unit: "%", Icon: Activity },
+  { name: "Heart Rate", short: "HR", value: "--", unit: "bpm", Icon: HeartPulse },
+  { name: "Respiratory Rate", short: "RR", value: "--", unit: "/min", Icon: Activity },
+  { name: "Temperature", short: "Temp", value: "--", unit: "°C", Icon: Thermometer },
+  { name: "Blood Pressure", short: "BP", value: "--", unit: "mmHg", Icon: HeartPulse },
+  { name: "Oxygen Saturation", short: "SpO₂", value: "--", unit: "%", Icon: Activity },
 ];
 
 function formatTime(seconds: number) {
@@ -126,6 +126,7 @@ function formatTime(seconds: number) {
 export default function SimulationPreview() {
   const {
     session: liveSession,
+    caseCode,
     mode,
     elapsed,
     paused,
@@ -143,21 +144,10 @@ export default function SimulationPreview() {
   const [studentName, setStudentName] = useState("Student");
   const [selectedTool, setSelectedTool] = useState<ToolId>("examination");
   const [chatOpen, setChatOpen] = useState(false);
-  const [hintOpen, setHintOpen] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [sceneLoaded, setSceneLoaded] = useState(false);
-  const [draft, setDraft] = useState("");
-  const [notice, setNotice] = useState("");
   const [diagnosisText, setDiagnosisText] = useState("");
   const [planText, setPlanText] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 1,
-      role: "system",
-      text: "UI preview. Session transcript will load from the backend after integration.",
-      time: "00:00",
-    },
-  ]);
 
 
   const studentInitials = studentName
@@ -176,7 +166,7 @@ export default function SimulationPreview() {
       if (cancelled) return;
       const user = data.user;
       if (error || !user) {
-        setStudentName("Guest Preview");
+        setStudentName("Student");
         return;
       }
       const meta = user.user_metadata ?? {};
@@ -189,7 +179,7 @@ export default function SimulationPreview() {
           : user.email?.split("@")[0] || "Student"
       );
     }).catch(() => {
-      if (!cancelled) setStudentName("Guest Preview");
+      if (!cancelled) setStudentName("Student");
     });
 
     return () => { cancelled = true; };
@@ -201,7 +191,6 @@ export default function SimulationPreview() {
       setToolsOpen(false);
       setToolPanelOpen(false);
       setChatOpen(false);
-      setHintOpen(false);
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -212,26 +201,8 @@ export default function SimulationPreview() {
 
 
 
-  const testSeconds = Math.max(0, 15 * 60 - elapsed);
-  const time = formatTime(mode === "test" ? testSeconds : elapsed);
+  const time = formatTime(elapsed);
   const activeTool = tools.find((tool) => tool.id === selectedTool) ?? tools[0];
-
-  function sendDraft(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!draft.trim() || paused || ended) return;
-
-    setMessages((current) => [
-      ...current,
-      {
-        id: Date.now(),
-        role: "student",
-        text: draft.trim(),
-        time: formatTime(elapsed),
-      },
-    ]);
-    setDraft("");
-    setNotice("Preview only: question not sent to the Patient AI.");
-  }
 
   function resetPreview() {
     restart();
@@ -253,7 +224,6 @@ export default function SimulationPreview() {
         text: message.content,
         time: "Saved",
       })),
-    ...messages,
   ];
 
   return (
@@ -326,7 +296,7 @@ export default function SimulationPreview() {
           <div className={`${styles.glass} ${styles.timer}`}>
             <Clock3 size={17} />
             <strong>{time}</strong>
-            <small>{mode === "test" ? "Remaining" : "Elapsed"}</small>
+            <small>Elapsed</small>
           </div>
         </div>
 
@@ -364,8 +334,9 @@ export default function SimulationPreview() {
           <button
             type="button"
             key={id}
-            title={label}
-            aria-label={label}
+            title={`${label} - F05 pending`}
+            aria-label={`${label} - F05 pending`}
+            disabled
             aria-pressed={selectedTool === id}
             className={`${styles.railButton} ${
               selectedTool === id ? styles.activeTool : ""
@@ -383,7 +354,7 @@ export default function SimulationPreview() {
         <div className="ydokpreview_railSpacer"/>
 
         <Link
-          href={`/dashboard/cases?specialty=Pediatrics&mode=${mode}`}
+          href={`/dashboard/cases?mode=${mode}`}
           className="ydokpreview_railLink"
           title="Back to Case Library"
           aria-label="Back to Case Library"
@@ -394,17 +365,17 @@ export default function SimulationPreview() {
       </aside>
 
       <section className={`${styles.glass} ${styles.patientCard}`}>
-        <div className={styles.cardHeading}><UserRound size={18} /> Patient Information</div>
-        <div className={styles.patientLine}>
-          <span className={styles.avatarIcon}>OK</span>
-          <div><strong>Omar K. <small>(6 yrs)</small></strong><p>Male · 6 years · 18 kg</p></div>
+      <div className={styles.cardHeading}>
+        <UserRound size={18} /> Patient Information
+      </div>
+      <div className={styles.patientLine}>
+        <span className={styles.avatarIcon}>ID</span>
+        <div>
+          <strong>{caseCode || "Loading case..."}</strong>
+          <p>Case details follow clinical access rules.</p>
         </div>
-        <div className={styles.patientLine}>
-          <span className={styles.avatarIcon}>M</span>
-          <div><strong>Guardian</strong><p>Mother (Mariam)</p></div>
-        </div>
-        <span className={styles.previewTag}>Synthetic UI data</span>
-      </section>
+      </div>
+    </section>
 
       <section className={`${styles.glass} ${styles.encounterCard}`}>
         <div className={styles.cardHeading}><ClipboardList size={18} /> Encounter Log</div>
@@ -431,7 +402,7 @@ export default function SimulationPreview() {
       <section className={`${styles.glass} ${styles.vitalsPanel}`}>
         <div className={styles.vitalsHeading}>
           <span><Activity size={19} /> Vital Signs</span>
-          <small>Sample readings</small>
+          <small>Not measured</small>
         </div>
         <div className={styles.vitalGrid}>
           {vitals.map(({ name, short, value, unit, Icon }) => (
@@ -442,33 +413,8 @@ export default function SimulationPreview() {
             </div>
           ))}
         </div>
-        <p className={styles.vitalsDisclaimer}>Preview only · Real readings will follow F05 access rules.</p>
+        <p className={styles.vitalsDisclaimer}>Readings are unavailable until clinical examination is connected.</p>
       </section>
-
-      {mode === "training" && !ended && (
-        <div className={styles.assistantArea}>
-          {hintOpen && (
-            <div className={`${styles.glass} ${styles.hintBubble}`}>
-              <button
-                className={styles.closeMini}
-                aria-label="Close assistant"
-                onClick={() => setHintOpen(false)}
-              ><X size={15} /></button>
-              <strong><Lightbulb size={15} /> YA-DOK Assistant</strong>
-              <p>Try asking the guardian when the symptoms started and what happened next.</p>
-              <small>Example hint · F06 integration pending</small>
-            </div>
-          )}
-          <button
-            className={styles.hintOrb}
-            onClick={() => setHintOpen((value) => !value)}
-            aria-label="Toggle training assistant"
-            title="Training assistant"
-          >
-            <Lightbulb size={28} />
-          </button>
-        </div>
-      )}
 
       <footer className={`${styles.glass} ${styles.dock}`}>
         <button className={styles.dockButton} onClick={() => void runAction(paused ? "resume" : "pause")}
@@ -482,16 +428,10 @@ export default function SimulationPreview() {
           <span>Chat History</span>
         </button>
 
-        <button
-          className={styles.voiceButton}
-          onClick={() => {
-            setChatOpen(true);
-            setNotice("Voice STT/TTS will be connected in Feature 11. Use text fallback for now.");
-          }}
-        >
+        <button type="button" className={styles.voiceButton} disabled title="Voice interaction is not available">
           <span className={styles.micCircle}><Mic size={22} /></span>
           <span className={styles.waveform}>▂▆█▃▇▅▂</span>
-          <span className={styles.voiceText}>Start speaking to your patient...</span>
+          <span className={styles.voiceText}>Voice interaction unavailable</span>
           <Keyboard size={17} className={styles.keyboardIcon} />
         </button>
 
@@ -501,16 +441,9 @@ export default function SimulationPreview() {
         </button>
       </footer>
 
-      <div className={styles.demoLabel}>SYNTHETIC CASE - LOCAL PG SESSION</div>
-      {(notice || liveError) && (
-        <div
-          className={styles.toast}
-          role={liveError ? "alert" : "status"}
-          onClick={() => setNotice("")}
-        >
-          {liveError || notice}
-          <X size={14} />
-        </div>
+      <div className={styles.demoLabel}>CASE {caseCode || "LOADING"}</div>
+      {liveError && (
+        <div className={styles.toast} role="alert">{liveError}</div>
       )}
 
       {toolPanelOpen && (
@@ -545,27 +478,19 @@ export default function SimulationPreview() {
         <div className={styles.overlay} onClick={() => setChatOpen(false)}>
           <aside className={`${styles.drawer} ${styles.chatDrawer}`} onClick={(event) => event.stopPropagation()}>
             <div className={styles.drawerHeader}>
-              <div><small>TEXT FALLBACK</small><h2>Session Transcript</h2></div>
+              <div><small>SESSION HISTORY</small><h2>Session Transcript</h2></div>
               <button className={styles.iconButton} aria-label="Close chat" onClick={() => setChatOpen(false)}><X /></button>
             </div>
             <div className={styles.transcript}>
+              {displayMessages.length === 0 && <p>No saved messages yet.</p>}
               {displayMessages.map((message) => (
                 <div key={message.id} className={`${styles.message} ${message.role === "student" ? styles.studentMessage : ""}`}>
-                  <small>{message.role === "student" ? "You · Draft" : "System"} · {message.time}</small>
+                  <small>{message.role === "student" ? "You" : "System"} · {message.time}</small>
                   <p>{message.text}</p>
                 </div>
               ))}
             </div>
-            <form className={styles.chatForm} onSubmit={sendDraft}>
-              <input
-                aria-label="Type a message"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Type a question (preview only)..."
-                disabled={paused || ended}
-              />
-              <button type="submit" aria-label="Add preview message" disabled={!draft.trim() || paused || ended}><Send size={18} /></button>
-            </form>
+
           </aside>
         </div>
       )}
@@ -573,7 +498,7 @@ export default function SimulationPreview() {
       {confirmEnd && (
         <div className={styles.modalOverlay}>
           <div className={`${styles.glass} ${styles.modal}`} role="dialog" aria-modal="true" aria-labelledby="end-title">
-            <h2 id="end-title">End this session preview?</h2>
+            <h2 id="end-title">Complete this session?</h2>
             <p>
               Finish the previous phases, then submit your diagnosis and
               treatment plan to complete this saved session.
@@ -618,8 +543,8 @@ export default function SimulationPreview() {
         <div className={styles.modalOverlay}>
           <div className={`${styles.glass} ${styles.modal}`} role="status">
             <CheckCircle2 size={36} className={styles.successIcon} />
-            <h2>Preview finished</h2>
-            <p>This synthetic session was completed and saved in local PostgreSQL.</p>
+            <h2>Session completed</h2>
+            <p>This simulation session was completed and saved.</p>
             <div className={styles.modalActions}>
               <a className={styles.dockButton} href="/dashboard">Dashboard</a>
               <button className={styles.endButton} onClick={resetPreview}>Try Again</button>

@@ -1,4 +1,4 @@
-﻿import { getAccessToken } from "@/lib/supabase/client";
+import { getAccessToken } from "@/lib/supabase/client";
 
 export type F03Mode = "training" | "test";
 export type F03Phase =
@@ -12,6 +12,10 @@ export type F03Phase =
 export type F03Session = {
   session_id: string;
   mode?: F03Mode;
+  case_code?: string;
+  case_version_id?: string;
+  version_number?: number;
+  duration_minutes?: number | null;
   current_phase: F03Phase;
   is_paused: boolean;
   is_completed: boolean;
@@ -40,29 +44,6 @@ export class F03HttpError extends Error {
   }
 }
 
-const DEMO_CASE = {
-  identity: {
-    age: 6,
-    sex: "male",
-    weight_kg: 18,
-  },
-  presenting_problem: {
-    chief_complaint: "Abdominal pain",
-  },
-  physical_examination: {
-    General: "Synthetic patient appears alert and comfortable.",
-    Vitals: {
-      HR: 92,
-      RR: 20,
-      Temperature_C: 36.8,
-      BP: "102/68",
-      SpO2: 98,
-    },
-  },
-  investigations: {
-    CBC: "Synthetic teaching example only.",
-  },
-};
 
 async function request<T>(
   path: string,
@@ -113,16 +94,16 @@ async function request<T>(
 }
 
 export const f03Live = {
-  ready() {
-    return request<{ ready: boolean; storage: string }>("/demo-ready");
-  },
 
-  startDemo(mode: F03Mode) {
-    return request<F03Session>("/sessions", "POST", {
+
+  startPublished(caseCode: string, mode: F03Mode) {
+    return request<F03Session>("/sessions/from-case", "POST", {
+      case_code: caseCode,
       mode,
-      case_data: DEMO_CASE,
     });
   },
+
+
 
   get(sessionId: string) {
     return request<F03Session>(`/sessions/${sessionId}`);
