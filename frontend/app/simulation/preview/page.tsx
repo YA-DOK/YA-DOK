@@ -213,7 +213,9 @@ export default function SimulationPreview() {
 
 
 
-  const time = formatTime(elapsed);
+  const hasTestDeadline = mode === "test" && typeof liveSession?.duration_minutes === "number" && liveSession.duration_minutes > 0;
+  const remainingSeconds = hasTestDeadline ? Math.max(0, liveSession!.duration_minutes! * 60 - elapsed) : elapsed;
+  const time = formatTime(remainingSeconds);
   const activeTool = tools.find((tool) => tool.id === selectedTool) ?? tools[0];
 
   function resetPreview() {
@@ -304,7 +306,7 @@ export default function SimulationPreview() {
           <div className={`${styles.glass} ${styles.timer}`}>
             <Clock3 size={17} />
             <strong>{time}</strong>
-            <small>Elapsed</small>
+            <small>{hasTestDeadline ? "Remaining" : "Elapsed"}</small>
           </div>
         </div>
 
@@ -441,7 +443,8 @@ export default function SimulationPreview() {
 
       <footer className={`${styles.glass} ${styles.dock} f04v08-dock`}>
         <button className={styles.dockButton} onClick={() => void runAction(paused ? "resume" : "pause")}
-          disabled={!liveSession || busy || ended}>
+          title={mode === "test" ? "The assessment clock cannot be paused" : undefined}
+          disabled={!liveSession || busy || ended || mode === "test"}>
           {paused ? <Play size={18} /> : <Pause size={18} />}
           <span>{paused ? "Resume" : "Pause"}</span>
         </button>

@@ -73,6 +73,16 @@ def _validate_open(row) -> None:
         raise failure(409, "CASE_NOT_PINNED", "Start the simulation from a published case.")
     if row.is_completed or row.is_paused or row.current_phase != SimulationPhase.HISTORY_TAKING.value:
         raise failure(409, "CHAT_NOT_ALLOWED", "Patient chat is only available during active history taking.")
+    # F04 uses its own reservation path: reject late chats here, too.
+    state = row.state_json or {}
+    minutes = state.get("duration_minutes")
+    if state.get("mode") == "test" and isinstance(minutes, (int, float)) and not isinstance(minutes, bool) and minutes > 0:
+        started = row.created_at
+        if started is not None:
+            if started.tzinfo is None:
+                started = started.replace(tzinfo=UTC)
+            if _utc_now() >= started + timedelta(minutes=minutes):
+                raise failure(409, "TIME_LIMIT_REACHED", "Assessment time limit reached. Open the session to view its final status.")
 
 
 class PostgresChatRepository:

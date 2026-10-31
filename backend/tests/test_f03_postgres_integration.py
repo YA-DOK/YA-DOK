@@ -309,3 +309,29 @@ def test_pg_real_http_session_lifecycle(pg, monkeypatch):
     finally:
         app.dependency_overrides.clear()
         app.dependency_overrides.update(old_overrides)
+
+
+def test_pg_test_mode_deadline_survives_reload(pg):
+    service, owner, _, engine = pg
+    session = service.create(owner, {"patient": "synthetic"}, mode="test")
+
+    # Only the isolated yadok_f03_test database is accepted by the pg fixture.
+    with engine.begin() as conn:
+        conn.execute(text(
+            "UPDATE simulation_sessions SET "
+            "state_json = jsonb_set(state_json, '{duration_minutes}', '20'::jsonb) "
+            "WHERE id = :sid"
+        ), {"sid": UUID(session.session_id)})
+        conn.execute(text(
+            "UPDATE simulation_events SET created_at = now() - interval '21 minutes' "
+            "WHERE session_id = :sid AND event_type = 'session_created'"
+        ), {"sid": UUID(session.session_id)})
+
+    expired = service.load(owner, session.session_id)
+    assert expired.is_completed is True
+    assert expired.current_phase == SimulationPhase.COMPLETED
+    assert expired.diagnosis is None
+    assert expired.events[-1].details["reason"] == "time_limit"
+    assert [e.event_type for e in expired.events].count("session_timed_out") == 1
+    restored = service.load(owner, session.session_id)
+    assert len(restored.events) == len(expired.events)

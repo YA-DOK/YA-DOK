@@ -59,7 +59,9 @@ function sessionSeconds(session: F03Session): number {
 
   if (pausedAt !== null) pausedTime += end - pausedAt;
 
-  return Math.max(0, Math.floor((end - start - pausedTime) / 1000));
+  // Test attempts use an uninterrupted wall-clock limit, including pause.
+  const duration = session.mode === "test" ? end - start : end - start - pausedTime;
+  return Math.max(0, Math.floor(duration / 1000));
 }
 
 export function useF03Session() {
@@ -74,6 +76,7 @@ export function useF03Session() {
   const storageKey = useRef("");
   const pending = useRef(new Map<string, string>());
   const inFlight = useRef(false);
+  const timeoutCheckedAt = useRef(0);
 
   useEffect(() => {
     if (booted.current) return;
@@ -156,7 +159,27 @@ export function useF03Session() {
   useEffect(() => {
     if (!session) return;
 
-    const tick = () => setElapsed(sessionSeconds(session));
+    const tick = () => {
+      const seconds = sessionSeconds(session);
+      setElapsed(seconds);
+      const duration = session.duration_minutes;
+      if (
+        session.mode === "test" && !session.is_completed &&
+        typeof duration === "number" && duration > 0 &&
+        seconds >= duration * 60 && !inFlight.current &&
+        Date.now() - timeoutCheckedAt.current >= 5000
+      ) {
+        timeoutCheckedAt.current = Date.now();
+        void f03Live.get(session.session_id).then((fresh) => {
+          setSession(fresh);
+          if (fresh.is_completed && storageKey.current) {
+            sessionStorage.removeItem(storageKey.current);
+          }
+        }).catch((err: unknown) => {
+          setError(err instanceof Error ? err.message : "Could not confirm time limit.");
+        });
+      }
+    };
     tick();
 
     const timer = window.setInterval(tick, 1000);

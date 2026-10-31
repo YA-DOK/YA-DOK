@@ -2,7 +2,7 @@
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 from uuid import uuid4
@@ -184,6 +184,59 @@ def create_session(
     )
 
     return session
+
+
+def test_time_limit_reached(
+    session: SimulationSession,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    """Only published, timed TEST attempts have a wall-clock deadline."""
+    if session.is_completed or getattr(session, "mode", "training") != "test":
+        return False
+    minutes = getattr(session, "duration_minutes", None)
+    if not isinstance(minutes, (int, float)) or isinstance(minutes, bool) or minutes <= 0:
+        return False
+    created = next((event for event in session.events if event.event_type == "session_created"), None)
+    if created is None:
+        return False
+    start = created.timestamp
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=UTC)
+    current = now or utc_now()
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=UTC)
+    return current >= start + timedelta(minutes=minutes)
+
+
+def expire_test_session_if_due(
+    session: SimulationSession,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    """Persistable, idempotent timeout without forcing a diagnosis."""
+    if not test_time_limit_reached(session, now=now):
+        return False
+    old_phase = session.current_phase
+    session.current_phase = SimulationPhase.COMPLETED
+    session.is_completed = True
+    session.is_paused = False
+    session.record_event(
+        "phase_changed",
+        {"from_phase": old_phase.value, "to_phase": "completed", "reason": "time_limit"},
+        phase=SimulationPhase.COMPLETED,
+    )
+    session.record_event(
+        "session_timed_out",
+        {"duration_minutes": session.duration_minutes, "previous_phase": old_phase.value},
+        phase=SimulationPhase.COMPLETED,
+    )
+    session.record_event(
+        "session_completed",
+        {"completed": True, "reason": "time_limit"},
+        phase=SimulationPhase.COMPLETED,
+    )
+    return True
 
 
 def _ensure_active(session: SimulationSession) -> None:

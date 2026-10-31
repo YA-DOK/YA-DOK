@@ -21,6 +21,7 @@ from app.simulation.engine import (
     SimulationPhase,
     SimulationSession,
     create_session,
+    expire_test_session_if_due,
 )
 
 
@@ -177,18 +178,24 @@ class PostgresSimulationService:
         sid = UUID(str(session_id))
         uid = UUID(str(user_id))
 
-        with self.session_factory() as db:
+        # A GET is allowed to finalize an expired test attempt, atomically.
+        with self.session_factory.begin() as db:
             row = db.scalar(
                 select(SimulationSessionModel).where(
                     SimulationSessionModel.id == sid,
                     SimulationSessionModel.user_id == uid,
-                )
+                ).with_for_update()
             )
 
             if row is None:
                 raise SessionNotFound()
 
-            return _hydrate(row, self._events(db, sid))
+            session = _hydrate(row, self._events(db, sid))
+            old_count = len(session.events)
+            if expire_test_session_if_due(session):
+                self._save_state(row, session)
+                self._append_events(db, session, old_count)
+            return session
 
     def apply_action(
         self,
@@ -233,7 +240,12 @@ class PostgresSimulationService:
             session = _hydrate(row, events)
             old_count = len(session.events)
 
-            response = _json_safe(handler(session))
+            # Enforce deadline under the same row lock as the requested action.
+            # At expiry the action is NOT executed; client will fetch completed state.
+            if expire_test_session_if_due(session):
+                response = _json_safe(session.to_dict())
+            else:
+                response = _json_safe(handler(session))
 
             self._save_state(row, session)
             self._append_events(db, session, old_count)
