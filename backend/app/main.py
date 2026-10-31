@@ -1,11 +1,25 @@
 
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
+import httpx
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import auth, health, users, simulation
 from app.core.config import settings
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # A shared, pooled HTTP client: no TCP/TLS handshake per chat turn.
+    async with httpx.AsyncClient(
+        limits=httpx.Limits(max_connections=40, max_keepalive_connections=20),
+        timeout=httpx.Timeout(15.0, connect=2.0),
+    ) as client:
+        app.state.f04_http_client = client
+        yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Yadok AI API",
     version="0.1.0",
 )
@@ -60,3 +74,7 @@ app.include_router(case_approval.router, prefix="/api/v1")
 # F02 + F03 published-case integration
 from app.api.routes import published_simulation
 app.include_router(published_simulation.router, prefix="/api/v1")
+
+# F04: version-pinned, authorized, idempotent patient chat API.
+from app.api.routes import patient_chat
+app.include_router(patient_chat.router, prefix="/api/v1")
