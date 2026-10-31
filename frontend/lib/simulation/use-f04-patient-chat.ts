@@ -126,7 +126,7 @@ export function useF04PatientChat(sessionId: string | undefined) {
     const content = draft.trim();
     if (!sessionId || !content || sendingLock.current) return false;
     if (!canSend) {
-      setError("Patient chat is only available in the active History Taking phase.");
+      setError("Patient chat requires an active, unpaused session.");
       return false;
     }
     sendingLock.current = true;

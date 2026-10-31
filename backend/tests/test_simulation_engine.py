@@ -92,11 +92,13 @@ def test_create_session_starts_at_introduction():
     assert session.session_id
 
 
-def test_patient_question_requires_history_phase():
+def test_patient_question_available_without_phase_transition():
     session = make_test_session()
 
-    with pytest.raises(SimulationError):
-        ask_patient(session, "Do you have a fever?")
+    reply = ask_patient(session, "Do you have a fever?")
+    assert reply
+    assert session.current_phase == SimulationPhase.INTRODUCTION
+    assert session.events[-1].event_type == "patient_response"
 
 
 def test_patient_question_uses_responder():
@@ -301,3 +303,114 @@ def test_cannot_bypass_diagnosis_with_direct_phase_transition():
     assert session.current_phase == SimulationPhase.DIAGNOSIS_AND_PLAN
     assert session.is_completed is False
     assert len(session.events) == initial_events
+
+
+@pytest.mark.parametrize(
+    "starting_phase",
+    [
+        SimulationPhase.INTRODUCTION,
+        SimulationPhase.HISTORY_TAKING,
+        SimulationPhase.EXAMINATION,
+        SimulationPhase.INVESTIGATIONS,
+        SimulationPhase.DIAGNOSIS_AND_PLAN,
+    ],
+)
+def test_early_finish_from_any_phase(starting_phase):
+    session = make_test_session()
+    move_to_phase(session, starting_phase)
+    submit_diagnosis_and_plan(session, "Provisional diagnosis", "")
+
+    result = complete_session(session)
+
+    assert result["is_completed"] is True
+    assert result["current_phase"] == "completed"
+    assert result["diagnosis"] == "Provisional diagnosis"
+    assert result["treatment_plan"] == ""
+    assert [event.event_type for event in session.events][-2:] == [
+        "phase_changed", "session_completed",
+    ]
+    assert session.events[-2].details["from_phase"] == starting_phase.value
+    with pytest.raises(SimulationError):
+        complete_session(session)
+
+
+def test_early_completion_still_requires_diagnosis():
+    session = make_test_session()
+    with pytest.raises(SimulationError):
+        complete_session(session)
+    assert session.current_phase == SimulationPhase.INTRODUCTION
+    assert session.is_completed is False
+
+
+from datetime import timedelta
+
+from backend.app.simulation.engine import expire_test_session_if_due
+
+
+def test_test_mode_timeout_records_completion_once():
+    session = make_test_session()
+    session.mode = "test"
+    session.duration_minutes = 20
+    created = session.events[0].timestamp
+    assert not expire_test_session_if_due(session, now=created + timedelta(minutes=19))
+    assert not session.is_completed
+    assert expire_test_session_if_due(session, now=created + timedelta(minutes=20))
+    assert session.is_completed
+    assert session.current_phase == SimulationPhase.COMPLETED
+    assert session.diagnosis is None
+    assert session.events[-2].event_type == "session_timed_out"
+    assert session.events[-1].details["reason"] == "time_limit"
+    count = len(session.events)
+    assert not expire_test_session_if_due(session, now=created + timedelta(minutes=30))
+    assert len(session.events) == count
+
+
+def test_training_never_expires_when_duration_is_display_only():
+    session = make_test_session()
+    session.mode = "training"
+    session.duration_minutes = 1
+    assert not expire_test_session_if_due(
+        session, now=session.events[0].timestamp + timedelta(days=7)
+    )
+    assert not session.is_completed
+
+
+def test_untimed_test_sessions_do_not_expire():
+    session = make_test_session()
+    session.mode = "test"
+    session.duration_minutes = None
+    assert not expire_test_session_if_due(
+        session, now=session.events[0].timestamp + timedelta(days=7)
+    )
+
+
+@pytest.mark.parametrize(
+    "phase",
+    [
+        SimulationPhase.INTRODUCTION,
+        SimulationPhase.HISTORY_TAKING,
+        SimulationPhase.EXAMINATION,
+        SimulationPhase.INVESTIGATIONS,
+        SimulationPhase.DIAGNOSIS_AND_PLAN,
+    ],
+)
+def test_clinical_actions_work_in_any_live_phase(phase):
+    session = make_test_session()
+    move_to_phase(session, phase)
+
+    assert ask_patient(session, "Hello")
+    assert request_examination(session, "temperature")["available"] is True
+    assert request_investigation(session, "CBC")["available"] is True
+    assert session.current_phase == phase
+
+
+def test_clinical_actions_rejected_after_completion():
+    session = make_test_session()
+    submit_diagnosis_and_plan(session, "Example diagnosis", "")
+    complete_session(session)
+    with pytest.raises(SimulationError):
+        ask_patient(session, "Hello")
+    with pytest.raises(SimulationError):
+        request_examination(session, "temperature")
+    with pytest.raises(SimulationError):
+        request_investigation(session, "CBC")

@@ -134,8 +134,6 @@ export default function SimulationPreview() {
     ended,
     busy,
     error: liveError,
-    currentPhase,
-    nextPhase,
     runAction,
     finish,
     restart,
@@ -157,8 +155,8 @@ export default function SimulationPreview() {
   useEffect(() => {
     if (chatOpen) chatTailRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [chatOpen, patientChat.messages.length]);
-  const canChat = Boolean(liveSession) && currentPhase === "history_taking" && !paused && !ended && !busy;
-  // F04_SCENE_CHAT_V08: the drawer is history-only; compose in the clinic dock.
+  const canChat = Boolean(liveSession) && !paused && !ended && !busy;
+  // The patient can be questioned at any point during an active session.
   const latestPatientReply = [...patientChat.messages].reverse().find((item) => item.role === "patient")?.content;
 
 
@@ -213,7 +211,9 @@ export default function SimulationPreview() {
 
 
 
-  const time = formatTime(elapsed);
+  const hasTestDeadline = mode === "test" && typeof liveSession?.duration_minutes === "number" && liveSession.duration_minutes > 0;
+  const remainingSeconds = hasTestDeadline ? Math.max(0, liveSession!.duration_minutes! * 60 - elapsed) : elapsed;
+  const time = formatTime(remainingSeconds);
   const activeTool = tools.find((tool) => tool.id === selectedTool) ?? tools[0];
 
   function resetPreview() {
@@ -304,7 +304,7 @@ export default function SimulationPreview() {
           <div className={`${styles.glass} ${styles.timer}`}>
             <Clock3 size={17} />
             <strong>{time}</strong>
-            <small>Elapsed</small>
+            <small>{hasTestDeadline ? "Remaining" : "Elapsed"}</small>
           </div>
         </div>
 
@@ -385,27 +385,6 @@ export default function SimulationPreview() {
       </div>
     </section>
 
-      <section className={`${styles.glass} ${styles.encounterCard}`}>
-        <div className={styles.cardHeading}><ClipboardList size={18} /> Encounter Log</div>
-        <p>Phase: {currentPhase.replaceAll("_", " ")}</p>
-        <p className={styles.subtle}>
-          {liveSession
-            ? `${liveSession.events.length} saved events`
-            : "Connecting to backend..."}
-        </p>
-        {nextPhase && nextPhase !== "completed" && (
-          <button
-            type="button"
-            className={styles.dockButton}
-            style={{ minHeight: 36, width: "100%", marginTop: 12 }}
-            disabled={!liveSession || busy || paused || ended}
-            onClick={() => void runAction("phase", { phase: nextPhase })}
-          >
-            Next: {nextPhase.replaceAll("_", " ")}
-          </button>
-        )}
-        <div className={styles.logTime}><Clock3 size={14} /> {formatTime(elapsed)}</div>
-      </section>
 
       <section className={`${styles.glass} ${styles.vitalsPanel}`}>
         <div className={styles.vitalsHeading}>
@@ -424,7 +403,7 @@ export default function SimulationPreview() {
         <p className={styles.vitalsDisclaimer}>Readings are unavailable until clinical examination is connected.</p>
       </section>
 
-      {!chatOpen && currentPhase === "history_taking" && (patientChat.sending || latestPatientReply) && (
+      {!chatOpen && (patientChat.sending || latestPatientReply) && (
         <div className="f04v08-scene-reply" aria-live="polite" aria-atomic="true">
           <div className="f04v08-reply-heading">
             <MessageCircle size={15} /> {patientChat.sending ? "Patient is responding..." : "Patient"}
@@ -441,7 +420,8 @@ export default function SimulationPreview() {
 
       <footer className={`${styles.glass} ${styles.dock} f04v08-dock`}>
         <button className={styles.dockButton} onClick={() => void runAction(paused ? "resume" : "pause")}
-          disabled={!liveSession || busy || ended}>
+          title={mode === "test" ? "The assessment clock cannot be paused" : undefined}
+          disabled={!liveSession || busy || ended || mode === "test"}>
           {paused ? <Play size={18} /> : <Pause size={18} />}
           <span>{paused ? "Resume" : "Pause"}</span>
         </button>
@@ -464,7 +444,7 @@ export default function SimulationPreview() {
             className="f04v08-dock-input"
             aria-label="Type your question to the patient"
             dir="auto"
-            placeholder={canChat ? "اكتب سؤالك للمريض هنا..." : "المحادثة متاحة أثناء أخذ التاريخ المرضي"}
+            placeholder={canChat ? "اكتب سؤالك للمريض هنا..." : "المحادثة غير متاحة حاليًا"}
             value={patientChat.draft}
             onChange={(event) => patientChat.setDraft(event.target.value)}
             autoComplete="off"
@@ -482,7 +462,7 @@ export default function SimulationPreview() {
           </button>
         </form>
 
-        <button className={styles.endButton} onClick={() => setConfirmEnd(true)} disabled={ended}>
+        <button className={styles.endButton} onClick={() => setConfirmEnd(true)} disabled={!liveSession || busy || paused || ended}>
           <span>End Session</span>
           <ChevronRight size={18} />
         </button>
@@ -525,7 +505,7 @@ export default function SimulationPreview() {
         <div className={styles.overlay} onClick={() => setChatOpen(false)}>
           <aside className={`${styles.drawer} ${styles.chatDrawer}`} onClick={(event) => event.stopPropagation()}>
             <div className={styles.drawerHeader}>
-              <div><small>F04 · SAVED CONVERSATION</small><h2>Chat History</h2></div>
+              <div><small>LIVE PATIENT</small><h2>Chat History</h2></div>
               <button className={styles.iconButton} aria-label="Close chat" onClick={() => setChatOpen(false)}><X /></button>
             </div>
             <div className={styles.transcript} aria-live="polite" aria-label="Saved patient conversation">
@@ -552,7 +532,7 @@ export default function SimulationPreview() {
             )}
             {!canChat && (
               <p style={{ color: "#edd0aa", fontSize: 12, marginBottom: 8 }}>
-                {!liveSession ? "Connecting to your simulation..." : ended ? "Session completed · chat is read-only." : paused ? "Resume the session to chat." : currentPhase !== "history_taking" ? "Patient chat is available during History Taking." : "Finish the current action first."}
+                {!liveSession ? "Connecting to your simulation..." : ended ? "Session completed · chat is read-only." : paused ? "Resume the session to chat." : "Finish the current action first."}
               </p>
             )}
             <p className="f04v08-history-note">المحادثة محفوظة تلقائيًا. اكتب سؤالك من الشريط السفلي في العيادة.</p>
@@ -565,10 +545,10 @@ export default function SimulationPreview() {
           <div className={`${styles.glass} ${styles.modal}`} role="dialog" aria-modal="true" aria-labelledby="end-title">
             <h2 id="end-title">Complete this session?</h2>
             <p>
-              Finish the previous phases, then submit your diagnosis and
-              treatment plan to complete this saved session.
+              You can finish at any point. Submit your diagnosis; skipped clinical
+              steps will remain recorded as not performed. Treatment is optional.
             </p>
-            {currentPhase === "diagnosis_and_plan" && !liveSession?.diagnosis && (
+            {!liveSession?.diagnosis && (
               <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
                 <textarea
                   aria-label="Diagnosis"
@@ -578,8 +558,8 @@ export default function SimulationPreview() {
                   style={{ padding: 12, background: "#18342d", color: "white", borderRadius: 10 }}
                 />
                 <textarea
-                  aria-label="Treatment plan"
-                  placeholder="Your treatment plan"
+                  aria-label="Treatment plan (optional)"
+                  placeholder="Treatment plan (optional)"
                   value={planText}
                   onChange={(e) => setPlanText(e.target.value)}
                   style={{ padding: 12, background: "#18342d", color: "white", borderRadius: 10 }}
@@ -590,7 +570,7 @@ export default function SimulationPreview() {
               <button className={styles.dockButton} onClick={() => setConfirmEnd(false)}>Cancel</button>
               <button
               className={styles.endButton}
-              disabled={!liveSession || busy || currentPhase !== "diagnosis_and_plan"}
+              disabled={!liveSession || busy || paused || ended}
               onClick={() => {
                 void finish(diagnosisText, planText).then((done) => {
                   if (done) setConfirmEnd(false);
