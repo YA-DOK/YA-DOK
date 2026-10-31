@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from copy import deepcopy
-from datetime import timezone
+from datetime import UTC
 from typing import Any
 from uuid import UUID
 
@@ -79,7 +79,7 @@ def _hydrate(row, events) -> SimulationSession:
                 event_type=event.event_type,
                 phase=SimulationPhase(event.phase),
                 details=deepcopy(event.details),
-                timestamp=event.created_at.astimezone(timezone.utc),
+                timestamp=event.created_at.astimezone(UTC),
             )
         )
 

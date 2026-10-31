@@ -7,7 +7,7 @@ holding a transaction open during the external LLM request.
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, select
@@ -33,7 +33,7 @@ MAX_QUESTIONS_PER_SESSION = 80
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _id(session_id: UUID, message_id: UUID, content: str):
@@ -55,7 +55,7 @@ def _expiry(data: dict) -> datetime:
     try:
         return datetime.fromisoformat(data["expires_at"])
     except (ValueError, TypeError, KeyError):
-        return datetime.min.replace(tzinfo=timezone.utc)
+        return datetime.min.replace(tzinfo=UTC)
 
 
 def _locked_session(db, session_id: UUID):

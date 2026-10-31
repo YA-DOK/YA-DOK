@@ -2,7 +2,7 @@
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 from uuid import uuid4
@@ -65,7 +65,7 @@ def transition_phase(
 
 def utc_now() -> datetime:
     """Return the current timezone-aware UTC time."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass
