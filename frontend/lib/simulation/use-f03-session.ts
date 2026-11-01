@@ -10,7 +10,7 @@ import {
   type F03Session,
 } from "./f03-live";
 
-type Action = "phase" | "pause" | "resume" | "diagnosis" | "complete";
+type Action = "phase" | "pause" | "resume" | "diagnosis" | "complete" | "examinations" | "investigations";
 
 const phases: F03Phase[] = [
   "introduction",

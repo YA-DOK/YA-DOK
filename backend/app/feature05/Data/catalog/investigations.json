@@ -1,0 +1,548 @@
+[
+  {
+    "id": "general_exam",
+    "name": "General Physical Examination",
+    "category": "general",
+    "subcategory": "General",
+    "description": "General assessment of the patient."
+  },
+  {
+    "id": "cardiovascular_exam",
+    "name": "Cardiovascular Examination",
+    "category": "system",
+    "subcategory": "Clinical Examination",
+    "description": "Examination of the cardiovascular system."
+  },
+  {
+    "id": "respiratory_exam",
+    "name": "Respiratory Examination",
+    "category": "system",
+    "subcategory": "Clinical Examination",
+    "description": "Examination of the respiratory system."
+  },
+  {
+    "id": "abdominal_exam",
+    "name": "Abdominal Examination",
+    "category": "system",
+    "subcategory": "Clinical Examination",
+    "description": "Examination of the abdomen."
+  },
+  {
+    "id": "neurological_exam",
+    "name": "Neurological Examination",
+    "category": "system",
+    "subcategory": "Clinical Examination",
+    "description": "Assessment of neurological function."
+  },
+  {
+    "id": "musculoskeletal_exam",
+    "name": "Musculoskeletal Examination",
+    "category": "system",
+    "subcategory": "Clinical Examination",
+    "description": "Assessment of muscles and joints."
+  },
+  {
+    "id": "skin_exam",
+    "name": "Skin Examination",
+    "category": "system",
+    "subcategory": "Clinical Examination",
+    "description": "Assessment of skin and visible lesions."
+  },
+  {
+    "id": "ent_exam",
+    "name": "Ear Nose and Throat Examination",
+    "category": "system",
+    "subcategory": "Clinical Examination",
+    "description": "Examination of ear, nose and throat."
+  },
+  {
+    "id": "eye_exam",
+    "name": "Eye Examination",
+    "category": "system",
+    "subcategory": "Clinical Examination",
+    "description": "Assessment of visual and ocular function."
+  },
+  {
+    "id": "cbc",
+    "name": "Complete Blood Count (CBC)",
+    "category": "laboratory",
+    "subcategory": "Hematology",
+    "description": "Measures blood cells, hemoglobin and platelets."
+  },
+  {
+    "id": "esr",
+    "name": "Erythrocyte Sedimentation Rate (ESR)",
+    "category": "laboratory",
+    "subcategory": "Inflammation",
+    "description": "Measures the rate of red blood cell sedimentation."
+  },
+  {
+    "id": "crp",
+    "name": "C-Reactive Protein (CRP)",
+    "category": "laboratory",
+    "subcategory": "Inflammation",
+    "description": "Measures an inflammatory marker."
+  },
+  {
+    "id": "bmp",
+    "name": "Basic Metabolic Panel",
+    "category": "laboratory",
+    "subcategory": "Biochemistry",
+    "description": "Measures basic electrolytes and metabolic markers."
+  },
+  {
+    "id": "cmp",
+    "name": "Comprehensive Metabolic Panel",
+    "category": "laboratory",
+    "subcategory": "Biochemistry",
+    "description": "Evaluates electrolytes, glucose, kidney and liver markers."
+  },
+  {
+    "id": "electrolytes",
+    "name": "Serum Electrolytes",
+    "category": "laboratory",
+    "subcategory": "Biochemistry",
+    "description": "Measures sodium, potassium and other electrolytes."
+  },
+  {
+    "id": "renal_function",
+    "name": "Renal Function Tests",
+    "category": "laboratory",
+    "subcategory": "Biochemistry",
+    "description": "Evaluates kidney function."
+  },
+  {
+    "id": "liver_function",
+    "name": "Liver Function Tests",
+    "category": "laboratory",
+    "subcategory": "Biochemistry",
+    "description": "Evaluates liver enzymes and related markers."
+  },
+  {
+    "id": "fasting_glucose",
+    "name": "Fasting Blood Glucose",
+    "category": "laboratory",
+    "subcategory": "Diabetes",
+    "description": "Measures fasting blood glucose."
+  },
+  {
+    "id": "random_glucose",
+    "name": "Random Blood Glucose",
+    "category": "laboratory",
+    "subcategory": "Diabetes",
+    "description": "Measures blood glucose at any time."
+  },
+  {
+    "id": "hba1c",
+    "name": "HbA1c",
+    "category": "laboratory",
+    "subcategory": "Diabetes",
+    "description": "Estimates average blood glucose over time."
+  },
+  {
+    "id": "lipid_profile",
+    "name": "Lipid Profile",
+    "category": "laboratory",
+    "subcategory": "Biochemistry",
+    "description": "Measures cholesterol and triglycerides."
+  },
+  {
+    "id": "ferritin",
+    "name": "Serum Ferritin",
+    "category": "laboratory",
+    "subcategory": "Hematology",
+    "description": "Assesses iron stores."
+  },
+  {
+    "id": "iron_studies",
+    "name": "Iron Studies",
+    "category": "laboratory",
+    "subcategory": "Hematology",
+    "description": "Evaluates iron status."
+  },
+  {
+    "id": "vitamin_b12",
+    "name": "Vitamin B12",
+    "category": "laboratory",
+    "subcategory": "Vitamins",
+    "description": "Measures vitamin B12."
+  },
+  {
+    "id": "vitamin_d",
+    "name": "Vitamin D",
+    "category": "laboratory",
+    "subcategory": "Vitamins",
+    "description": "Measures vitamin D status."
+  },
+  {
+    "id": "folate",
+    "name": "Serum Folate",
+    "category": "laboratory",
+    "subcategory": "Vitamins",
+    "description": "Measures folate concentration."
+  },
+  {
+    "id": "reticulocyte_count",
+    "name": "Reticulocyte Count",
+    "category": "laboratory",
+    "subcategory": "Hematology",
+    "description": "Measures immature red blood cells."
+  },
+  {
+    "id": "peripheral_blood_smear",
+    "name": "Peripheral Blood Smear",
+    "category": "laboratory",
+    "subcategory": "Hematology",
+    "description": "Microscopic examination of blood cells."
+  },
+  {
+    "id": "coagulation_profile",
+    "name": "Coagulation Profile",
+    "category": "laboratory",
+    "subcategory": "Coagulation",
+    "description": "Evaluates blood clotting."
+  },
+  {
+    "id": "pt_inr",
+    "name": "Prothrombin Time (PT/INR)",
+    "category": "laboratory",
+    "subcategory": "Coagulation",
+    "description": "Measures blood clotting time."
+  },
+  {
+    "id": "aptt",
+    "name": "Activated Partial Thromboplastin Time (aPTT)",
+    "category": "laboratory",
+    "subcategory": "Coagulation",
+    "description": "Evaluates intrinsic coagulation pathway."
+  },
+  {
+    "id": "procalcitonin",
+    "name": "Procalcitonin",
+    "category": "laboratory",
+    "subcategory": "Infection",
+    "description": "An inflammatory marker used in infection assessment."
+  },
+  {
+    "id": "lactate",
+    "name": "Blood Lactate",
+    "category": "laboratory",
+    "subcategory": "Biochemistry",
+    "description": "Measures blood lactate concentration."
+  },
+  {
+    "id": "amylase",
+    "name": "Serum Amylase",
+    "category": "laboratory",
+    "subcategory": "Biochemistry",
+    "description": "Measures amylase enzyme."
+  },
+  {
+    "id": "lipase",
+    "name": "Serum Lipase",
+    "category": "laboratory",
+    "subcategory": "Biochemistry",
+    "description": "Measures lipase enzyme."
+  },
+  {
+    "id": "uric_acid",
+    "name": "Uric Acid",
+    "category": "laboratory",
+    "subcategory": "Biochemistry",
+    "description": "Measures serum uric acid."
+  },
+  {
+    "id": "chest_xray",
+    "name": "Chest X-Ray",
+    "category": "imaging",
+    "subcategory": "X-Ray",
+    "description": "Radiographic examination of the chest."
+  },
+  {
+    "id": "abdominal_xray",
+    "name": "Abdominal X-Ray",
+    "category": "imaging",
+    "subcategory": "X-Ray",
+    "description": "Radiographic examination of the abdomen."
+  },
+  {
+    "id": "bone_xray",
+    "name": "Bone X-Ray",
+    "category": "imaging",
+    "subcategory": "X-Ray",
+    "description": "Radiographic examination of bones."
+  },
+  {
+    "id": "ultrasound_abdomen",
+    "name": "Abdominal Ultrasound",
+    "category": "imaging",
+    "subcategory": "Ultrasound",
+    "description": "Ultrasound examination of abdominal organs."
+  },
+  {
+    "id": "ultrasound_pelvis",
+    "name": "Pelvic Ultrasound",
+    "category": "imaging",
+    "subcategory": "Ultrasound",
+    "description": "Ultrasound examination of pelvic organs."
+  },
+  {
+    "id": "doppler_ultrasound",
+    "name": "Doppler Ultrasound",
+    "category": "imaging",
+    "subcategory": "Ultrasound",
+    "description": "Evaluates blood flow through vessels."
+  },
+  {
+    "id": "ct_head",
+    "name": "CT Brain",
+    "category": "imaging",
+    "subcategory": "CT",
+    "description": "Computed tomography of the brain."
+  },
+  {
+    "id": "ct_chest",
+    "name": "CT Chest",
+    "category": "imaging",
+    "subcategory": "CT",
+    "description": "Computed tomography of the chest."
+  },
+  {
+    "id": "ct_abdomen",
+    "name": "CT Abdomen",
+    "category": "imaging",
+    "subcategory": "CT",
+    "description": "Computed tomography of the abdomen."
+  },
+  {
+    "id": "mri_brain",
+    "name": "MRI Brain",
+    "category": "imaging",
+    "subcategory": "MRI",
+    "description": "Magnetic resonance imaging of the brain."
+  },
+  {
+    "id": "mri_spine",
+    "name": "MRI Spine",
+    "category": "imaging",
+    "subcategory": "MRI",
+    "description": "Magnetic resonance imaging of the spine."
+  },
+  {
+    "id": "urinalysis",
+    "name": "Urinalysis",
+    "category": "urinalysis",
+    "subcategory": "Urine Tests",
+    "description": "Routine chemical and physical urine analysis."
+  },
+  {
+    "id": "urine_microscopy",
+    "name": "Urine Microscopy",
+    "category": "urinalysis",
+    "subcategory": "Urine Tests",
+    "description": "Microscopic examination of urine."
+  },
+  {
+    "id": "urine_protein",
+    "name": "Urine Protein",
+    "category": "urinalysis",
+    "subcategory": "Urine Tests",
+    "description": "Detects protein in urine."
+  },
+  {
+    "id": "urine_acr",
+    "name": "Urine Albumin Creatinine Ratio",
+    "category": "urinalysis",
+    "subcategory": "Urine Tests",
+    "description": "Measures urinary albumin relative to creatinine."
+  },
+  {
+    "id": "blood_culture",
+    "name": "Blood Culture",
+    "category": "microbiology",
+    "subcategory": "Culture",
+    "description": "Detects microorganisms in blood."
+  },
+  {
+    "id": "urine_culture",
+    "name": "Urine Culture",
+    "category": "microbiology",
+    "subcategory": "Culture",
+    "description": "Detects microorganisms in urine."
+  },
+  {
+    "id": "sputum_culture",
+    "name": "Sputum Culture",
+    "category": "microbiology",
+    "subcategory": "Culture",
+    "description": "Detects microorganisms in sputum."
+  },
+  {
+    "id": "throat_culture",
+    "name": "Throat Swab Culture",
+    "category": "microbiology",
+    "subcategory": "Culture",
+    "description": "Detects bacterial pathogens in throat samples."
+  },
+  {
+    "id": "stool_culture",
+    "name": "Stool Culture",
+    "category": "microbiology",
+    "subcategory": "Culture",
+    "description": "Detects bacterial pathogens in stool."
+  },
+  {
+    "id": "wound_culture",
+    "name": "Wound Culture",
+    "category": "microbiology",
+    "subcategory": "Culture",
+    "description": "Identifies microorganisms in wound samples."
+  },
+  {
+    "id": "covid_pcr",
+    "name": "SARS-CoV-2 PCR",
+    "category": "microbiology",
+    "subcategory": "PCR",
+    "description": "Molecular test for SARS-CoV-2."
+  },
+  {
+    "id": "influenza_pcr",
+    "name": "Influenza PCR",
+    "category": "microbiology",
+    "subcategory": "PCR",
+    "description": "Molecular test for influenza viruses."
+  },
+  {
+    "id": "tsh",
+    "name": "Thyroid Stimulating Hormone (TSH)",
+    "category": "hormones",
+    "subcategory": "Thyroid",
+    "description": "Assesses thyroid stimulating hormone."
+  },
+  {
+    "id": "free_t4",
+    "name": "Free T4",
+    "category": "hormones",
+    "subcategory": "Thyroid",
+    "description": "Measures free thyroxine."
+  },
+  {
+    "id": "free_t3",
+    "name": "Free T3",
+    "category": "hormones",
+    "subcategory": "Thyroid",
+    "description": "Measures free triiodothyronine."
+  },
+  {
+    "id": "cortisol",
+    "name": "Serum Cortisol",
+    "category": "hormones",
+    "subcategory": "Adrenal",
+    "description": "Measures cortisol concentration."
+  },
+  {
+    "id": "prolactin",
+    "name": "Prolactin",
+    "category": "hormones",
+    "subcategory": "Pituitary",
+    "description": "Measures prolactin hormone."
+  },
+  {
+    "id": "fsh",
+    "name": "Follicle Stimulating Hormone (FSH)",
+    "category": "hormones",
+    "subcategory": "Reproductive",
+    "description": "Measures FSH hormone."
+  },
+  {
+    "id": "lh",
+    "name": "Luteinizing Hormone (LH)",
+    "category": "hormones",
+    "subcategory": "Reproductive",
+    "description": "Measures LH hormone."
+  },
+  {
+    "id": "growth_hormone",
+    "name": "Growth Hormone",
+    "category": "hormones",
+    "subcategory": "Pituitary",
+    "description": "Measures growth hormone."
+  },
+  {
+    "id": "ecg",
+    "name": "Electrocardiogram (ECG)",
+    "category": "cardiac",
+    "subcategory": "Cardiac Tests",
+    "description": "Records electrical activity of the heart."
+  },
+  {
+    "id": "troponin_i",
+    "name": "Troponin I",
+    "category": "cardiac",
+    "subcategory": "Cardiac Markers",
+    "description": "Measures cardiac troponin I."
+  },
+  {
+    "id": "troponin_t",
+    "name": "Troponin T",
+    "category": "cardiac",
+    "subcategory": "Cardiac Markers",
+    "description": "Measures cardiac troponin T."
+  },
+  {
+    "id": "bnp",
+    "name": "B-type Natriuretic Peptide (BNP)",
+    "category": "cardiac",
+    "subcategory": "Cardiac Markers",
+    "description": "Supports assessment of cardiac strain."
+  },
+  {
+    "id": "ck_mb",
+    "name": "Creatine Kinase MB (CK-MB)",
+    "category": "cardiac",
+    "subcategory": "Cardiac Markers",
+    "description": "Measures a cardiac-associated enzyme."
+  },
+  {
+    "id": "spirometry",
+    "name": "Spirometry",
+    "category": "other",
+    "subcategory": "Respiratory Diagnostics",
+    "description": "Measures lung function and airflow."
+  },
+  {
+    "id": "peak_flow",
+    "name": "Peak Expiratory Flow",
+    "category": "other",
+    "subcategory": "Respiratory Diagnostics",
+    "description": "Measures maximum expiratory airflow."
+  },
+  {
+    "id": "pulse_oximetry",
+    "name": "Pulse Oximetry",
+    "category": "other",
+    "subcategory": "Monitoring",
+    "description": "Estimates peripheral oxygen saturation."
+  },
+  {
+    "id": "eeg",
+    "name": "Electroencephalogram (EEG)",
+    "category": "other",
+    "subcategory": "Neurodiagnostics",
+    "description": "Records electrical activity of the brain."
+  },
+  {
+    "id": "sleep_study",
+    "name": "Sleep Study",
+    "category": "other",
+    "subcategory": "Sleep Diagnostics",
+    "description": "Evaluates breathing and other parameters during sleep."
+  },
+  {
+    "id": "blood_gas",
+    "name": "Blood Gas Analysis",
+    "category": "laboratory",
+    "subcategory": "Blood Gas",
+    "description": "Measures blood pH and respiratory gas parameters."
+  }
+]

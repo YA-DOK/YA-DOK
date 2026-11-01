@@ -1,0 +1,837 @@
+/* YA-DOK F05 UI V3 — compact, accessible presentation only; existing F01–F04 session APIs unchanged. */
+.ydokpreview_f05Overlay {
+  background: rgba(4, 15, 13, .32);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+}
+.ydokpreview_drawer.ydokpreview_f05Drawer {
+  box-sizing: border-box;
+  left: auto;
+  right: 0;
+  width: min(536px, calc(100vw - 78px));
+  padding: 15px 18px 14px;
+  overflow: hidden;
+  border-right: 0;
+  border-left: 1px solid rgba(108, 238, 195, .32);
+  border-radius: 17px 0 0 17px;
+  background: linear-gradient(155deg, #142b27 0%, #101f1d 48%, #0b1918 100%);
+  box-shadow: -20px 0 65px rgba(0,0,0,.30), inset 1px 0 rgba(255,255,255,.05);
+  animation: drawerRight .26s ease both;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Header {
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(216, 245, 230, .11);
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Header small {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #7ae3c5;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Header h2 {
+  margin: 3px 0 2px;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -.65px;
+  color: #fafbf5;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Header p {
+  margin: 0;
+  color: #a6bdb3;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.ydokpreview_f05Drawer .ydokpreview_iconButton { flex-shrink: 0; }
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
+  margin: 10px 0 12px;
+  padding: 4px;
+  border: 1px solid rgba(181,234,207,.13);
+  border-radius: 13px;
+  background: rgba(255,255,255,.035);
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice {
+  min-width: 0;
+  min-height: 58px;
+  padding: 7px 2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  color: #cadbd1;
+  font-size: 10px;
+  line-height: 1.18;
+  text-align: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice:hover {
+  color: #f6fff8;
+  background: rgba(159,245,205,.09);
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolSelected {
+  color: #9cf6d8;
+  border-color: rgba(121,239,199,.68);
+  background: linear-gradient(170deg, rgba(41,124,99,.55), rgba(14,71,57,.61));
+  box-shadow: inset 0 1px rgba(219,255,236,.10), 0 0 15px rgba(69,229,165,.09);
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice span {
+  overflow-wrap: anywhere;
+  margin: 0;
+  display: block;
+  color: inherit;
+  font-size: 10px;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice svg {
+  flex-shrink: 0;
+  color: currentColor;
+  margin-left: 0; /* override preview-ui.css svg:last-child auto margin */
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Detail {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ydokpreview_f05SectionHeading {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 0 10px;
+}
+.ydokpreview_f05SectionIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  color: #7de8ca;
+  border: 1px solid rgba(131,243,200,.21);
+  border-radius: 10px;
+  background: rgba(119,231,184,.10);
+}
+.ydokpreview_f05SectionName { min-width: 0; flex: 1; }
+.ydokpreview_f05Drawer .ydokpreview_f05SectionName h3 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.25;
+  color: #f8faf5;
+  letter-spacing: -.4px;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05SectionName p {
+  margin: 2px 0 0;
+  line-height: 1.3;
+  font-size: 10px;
+  color: #a5bdb1;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05PhaseChip {
+  margin-top: 0;
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border: 1px solid #419b7d60;
+  border-radius: 50px;
+  color: #9ae8ce;
+  background: rgba(19,91,68,.28);
+  font-size: 10px;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.ydokpreview_f05Drawer .f05ui_body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  color: #f0f9f2;
+  font-size: 12px;
+}
+.ydokpreview_f05Drawer .f05ui_body span { margin-top: 0; }
+.ydokpreview_f05Drawer .f05ui_body p { margin: 0; font-size: 12px; line-height: 1.5; color: inherit; }
+.ydokpreview_f05Drawer .f05ui_notice,
+.ydokpreview_f05Drawer .f05ui_ready,
+.ydokpreview_f05Drawer .f05ui_info {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 11px;
+  border: 1px solid rgba(191,232,205,.14);
+  background: rgba(79,139,116,.14);
+  padding: 8px 10px;
+  margin-bottom: 9px;
+  color: #c8f3e2;
+  line-height: 1.45;
+}
+.ydokpreview_f05Drawer .f05ui_notice {
+  color: #f8dbad;
+  background: rgba(130,94,42,.17);
+  border-color: rgba(243,191,104,.23);
+}
+.ydokpreview_f05Drawer .f05ui_info {
+  background: rgba(118,170,168,.08);
+  color: #c2dcdd;
+}
+.ydokpreview_f05Drawer .f05ui_notice svg,
+.ydokpreview_f05Drawer .f05ui_ready svg,
+.ydokpreview_f05Drawer .f05ui_info svg { flex-shrink: 0; margin-top: 1px; }
+.ydokpreview_f05Drawer .f05ui_notice strong { display: block; margin-bottom: 2px; color: #f8dfb9; }
+.ydokpreview_f05Drawer .f05ui_notice span { display: block; color: #dfcaa9; }
+.ydokpreview_f05Drawer .f05ui_search {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  min-height: 38px;
+  border: 1px solid rgba(155,224,196,.35);
+  border-radius: 12px;
+  background: rgba(5,36,30,.58);
+  color: #91cab9;
+}
+.ydokpreview_f05Drawer .f05ui_search:focus-within {
+  border-color: #8aedc8;
+  box-shadow: 0 0 0 2px rgba(100,232,187,.12);
+}
+.ydokpreview_f05Drawer .f05ui_search input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f3fff9;
+  font: inherit;
+  font-size: 12px;
+}
+.ydokpreview_f05Drawer .f05ui_search input::placeholder { color: #8fa99d; }
+.ydokpreview_f05Drawer .f05ui_searchCount {
+  flex-shrink: 0;
+  display: inline-block;
+  color: #93c3b0;
+  font-size: 10px;
+}
+.ydokpreview_f05Drawer .f05ui_catalogueHeader {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 1px 7px;
+}
+.ydokpreview_f05Drawer .f05ui_catalogueHeader strong {
+  font-size: 12px;
+  color: #edf8f3;
+}
+.ydokpreview_f05Drawer .f05ui_catalogueHeader span {
+  display: inline-block;
+  font-size: 10px;
+  color: #a7c1b6;
+}
+.ydokpreview_f05Drawer .f05ui_listScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 4px 10px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #517969 transparent;
+}
+.ydokpreview_f05Drawer .f05ui_cardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.ydokpreview_f05Drawer .f05ui_testCard {
+  display: flex;
+  min-width: 0;
+  min-height: 78px;
+  width: 100%;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  padding: 10px;
+  border: 1px solid rgba(155,231,198,.2);
+  border-radius: 12px;
+  color: #f6fff8;
+  background: linear-gradient(145deg, rgba(47,92,76,.30), rgba(15,57,47,.55));
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.ydokpreview_f05Drawer .f05ui_testCard:hover:enabled {
+  transform: translateY(-1px);
+  border-color: #68d8ad;
+  background: rgba(38,105,83,.48);
+}
+.ydokpreview_f05Drawer .f05ui_testCard:disabled {
+  opacity: 1;
+  color: #e3f0e8;
+  border-color: rgba(150,186,169,.22);
+  background: rgba(28,51,45,.53);
+  cursor: not-allowed;
+}
+.ydokpreview_f05Drawer .f05ui_testCardActive {
+  border-color: #74e1b9;
+  background: rgba(35,109,84,.38);
+}
+.ydokpreview_f05Drawer .f05ui_testIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: rgba(125,230,190,.10);
+  color: #82e2c0;
+}
+.ydokpreview_f05Drawer .f05ui_testText { display: flex; flex: 1; min-width: 0; flex-direction: column; align-items: flex-start; gap: 4px; }
+.ydokpreview_f05Drawer .f05ui_testText strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.ydokpreview_f05Drawer .f05ui_testText small { display: block; font-size: 10px; color: #9dbbae; }
+.ydokpreview_f05Drawer .f05ui_status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  font-size: 10px;
+  font-weight: 650;
+  border-radius: 50px;
+  padding: 3px 7px;
+  color: #a7d2c3;
+  background: rgba(187,221,202,.10);
+}
+.ydokpreview_f05Drawer .f05ui_status_done { color: #8af3ce; background: rgba(33,167,118,.20); }
+.ydokpreview_f05Drawer .f05ui_status_unavailable { color: #ebc9b0; background: rgba(172,122,86,.17); }
+.ydokpreview_f05Drawer .f05ui_showMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  margin: 10px 0 0;
+  padding: 10px;
+  border: 1px solid rgba(167,222,195,.25);
+  border-radius: 12px;
+  background: rgba(64,124,99,.20);
+  color: #c5efd9;
+  font-size: 11px;
+}
+.ydokpreview_f05Drawer .f05ui_resultPanel {
+  margin: 9px 0 0;
+  padding: 11px;
+  border: 1px solid rgba(130,236,199,.32);
+  border-radius: 13px;
+  background: rgba(17,66,52,.62);
+}
+.ydokpreview_f05Drawer .f05ui_resultPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ydokpreview_f05Drawer .f05ui_resultPanelHeader > div > span { font-size: 9px; letter-spacing: 1.3px; color: #83dabb; }
+.ydokpreview_f05Drawer .f05ui_resultPanelHeader h4 { margin: 3px 0 0; font-size: 14px; color: #f5fef8; }
+.ydokpreview_f05Drawer .f05ui_resultList { display: grid; gap: 8px; margin: 0; }
+.ydokpreview_f05Drawer .f05ui_resultEntry { display: grid; grid-template-columns: minmax(90px, 35%) 1fr; gap: 9px; align-items: start; }
+.ydokpreview_f05Drawer .f05ui_resultEntry dt { font-size: 11px; color: #a5cabc; overflow-wrap: anywhere; }
+.ydokpreview_f05Drawer .f05ui_resultEntry dd { margin: 0; min-width: 0; font-size: 12px; line-height: 1.45; color: #f5fff9; overflow-wrap: anywhere; }
+.ydokpreview_f05Drawer .f05ui_resultRows { display: grid; gap: 8px; }
+.ydokpreview_f05Drawer .f05ui_resultRow { padding: 8px; border-radius: 9px; background: rgba(218,255,231,.05); }
+.ydokpreview_f05Drawer .f05ui_missing { color: #c3d5c9; font-size: 11px; }
+.ydokpreview_f05Drawer .f05ui_footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 1px 0;
+  color: #94b6a5;
+  font-size: 10px;
+  border-top: 1px solid rgba(194,248,216,.10);
+}
+.ydokpreview_f05Drawer .f05ui_footer svg { flex-shrink: 0; }
+.ydokpreview_f05Drawer .f05ui_empty,
+.ydokpreview_f05Drawer .f05ui_error {
+  padding: 18px 14px;
+  border: 1px dashed rgba(196,235,212,.2);
+  border-radius: 12px;
+  color: #c2d6cc;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.ydokpreview_f05Drawer .f05ui_error { color: #ffbeb8; border-color: rgba(255,156,145,.3); }
+.ydokpreview_f05Drawer .f05ui_notes { overflow: hidden; }
+.ydokpreview_f05Drawer .f05ui_summary {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(112,217,178,.24);
+  border-radius: 12px;
+  color: #b5ecd7;
+  background: rgba(43,103,84,.22);
+  flex-shrink: 0;
+}
+.ydokpreview_f05Drawer .f05ui_notesList { min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 8px; padding-top: 14px; }
+.ydokpreview_f05Drawer .f05ui_note {
+  display: flex; gap: 12px; padding: 12px;
+  border: 1px solid rgba(191,232,205,.13); border-radius: 12px;
+  background: rgba(255,255,255,.035);
+}
+.ydokpreview_f05Drawer .f05ui_note > svg { flex-shrink: 0; margin-top: 2px; }
+.ydokpreview_f05Drawer .f05ui_note > div { display: grid; gap: 5px; min-width: 0; }
+.ydokpreview_f05Drawer .f05ui_note strong { overflow-wrap: anywhere; }
+.ydokpreview_f05Drawer .f05ui_note span { color: #9bbbaa; font-size: 10px; }
+@media (max-width: 850px) {
+  .ydokpreview_drawer.ydokpreview_f05Drawer { width: min(536px, calc(100vw - 42px)); padding: 14px; }
+}
+@media (max-width: 610px) {
+  .ydokpreview_drawer.ydokpreview_f05Drawer { width: 100vw; max-width: 100vw; border-radius: 0; padding: 12px; }
+  .ydokpreview_f05Drawer .ydokpreview_f05Header h2 { font-size: 21px; }
+  .ydokpreview_f05Drawer .ydokpreview_f05Tabs { gap: 2px; padding: 4px; margin: 10px 0; }
+  .ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice { min-height: 55px; gap: 4px; font-size: 9px; }
+  .ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice span { font-size: 9px; }
+  .ydokpreview_f05Drawer .f05ui_cardGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ydokpreview_f05Drawer .f05ui_testCard { min-height: 72px; }
+  .ydokpreview_f05Drawer .ydokpreview_f05PhaseChip { max-width: 105px; white-space: normal; text-align: center; }
+}
+@media (max-height: 680px) {
+  .ydokpreview_f05Drawer .ydokpreview_f05Header p { display: none; }
+  .ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice { min-height: 55px; padding: 6px 2px; gap: 3px; }
+  .ydokpreview_f05Drawer .ydokpreview_f05Tabs { margin: 8px 0; }
+  .ydokpreview_f05Drawer .ydokpreview_f05SectionHeading { padding-bottom: 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ydokpreview_drawer.ydokpreview_f05Drawer,
+  .ydokpreview_f05Drawer .f05ui_testCard { animation: none; transition: none; }
+}
+
+/* V3 interaction and visibility refinements. No clinical data or API changes. */
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice:focus-visible,
+.ydokpreview_f05Drawer .f05ui_testCard:focus-visible,
+.ydokpreview_f05Drawer .f05ui_showMore:focus-visible,
+.ydokpreview_f05Drawer .ydokpreview_iconButton:focus-visible {
+  outline: 2px solid #a7f7d8;
+  outline-offset: 2px;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice svg {
+  width: 18px;
+  height: 18px;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice span {
+  line-height: 1.15;
+  font-weight: 600;
+}
+.ydokpreview_f05Drawer .f05ui_search input::-webkit-search-cancel-button { cursor: pointer; }
+.ydokpreview_f05Drawer .f05ui_testCard:disabled:hover {
+  transform: none;
+}
+.ydokpreview_f05Drawer .f05ui_testCard:disabled .f05ui_testText strong { color: #e0eee5; }
+.ydokpreview_f05Drawer .f05ui_testCard:disabled .f05ui_testText small { color: #b5c7be; }
+.ydokpreview_f05Drawer .f05ui_testCard:disabled .f05ui_status_new {
+  color: #c5d6ce;
+  background: rgba(191,214,200,.10);
+}
+.ydokpreview_f05Drawer:has(.f05ui_notice) .ydokpreview_f05PhaseChip {
+  color: #f1d5a9;
+  border-color: rgba(228,174,91,.30);
+  background: rgba(110,77,39,.22);
+}
+.ydokpreview_f05Drawer .f05ui_listScroll {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.ydokpreview_f05Drawer .f05ui_resultPanel {
+  scroll-margin-top: 8px;
+}
+.ydokpreview_f05Drawer .f05ui_cardGrid .f05ui_testCardActive {
+  box-shadow: inset 3px 0 0 #8bebc8;
+}
+@media (max-width: 480px) {
+  .ydokpreview_f05Drawer .f05ui_cardGrid { grid-template-columns: 1fr; }
+  .ydokpreview_f05Drawer .f05ui_testCard { min-height: 66px; }
+  .ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice span { font-size: 9px; }
+  .ydokpreview_f05Drawer .ydokpreview_f05SectionName p { display: none; }
+}
+@media (max-height: 760px) {
+  .ydokpreview_f05Drawer .ydokpreview_f05Header p { display: none; }
+  .ydokpreview_f05Drawer .ydokpreview_f05Tabs { margin: 8px 0 9px; }
+  .ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice { min-height: 49px; }
+  .ydokpreview_f05Drawer .f05ui_catalogueHeader { padding: 7px 1px 5px; }
+}
+
+/*
+ * F05 V4 — YA-DOK Landing design bridge.
+ * Palette and design cues are taken from:
+ *   frontend/app/landing-lab/LandingExperience.module.css
+ * Scope: F05 clinical drawer only. Session/API/clinical behavior unchanged.
+ * Anchor: LEFT, matching the simulation's left tool rail.
+ */
+.ydokpreview_drawer.ydokpreview_f05Drawer {
+  --f05-ink: #08232b;
+  --f05-navy: #071c23;
+  --f05-mid: #123f49;
+  --f05-mint: #90edda;
+  --f05-pale: #e4faf3;
+  --f05-outline: rgba(181, 255, 237, .30);
+  --f05-muted: #bbd8d2;
+  left: 0;
+  right: auto;
+  border-left: 0;
+  border-right: 1px solid var(--f05-outline);
+  border-radius: 0 19px 19px 0;
+  background: linear-gradient(153deg, #123f49 0%, #0b2c35 26%, #071c23 71%, #061820 100%);
+  box-shadow: 23px 0 65px rgba(1, 13, 20, .50), inset -1px 0 rgba(219, 255, 246, .09);
+  color: #f7fcf8;
+  font-family: Inter, "IBM Plex Sans Arabic", Arial, sans-serif;
+  animation: drawerIn .26s cubic-bezier(.2, .8, .3, 1) both;
+}
+.ydokpreview_f05Overlay {
+  background: rgba(2, 17, 24, .43);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Header {
+  border-color: rgba(199, 255, 240, .16);
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Header small {
+  color: #a1f5df;
+  letter-spacing: .13em;
+  font-weight: 750;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Header h2 {
+  color: #f7fcf8;
+  font-weight: 800;
+  letter-spacing: -.04em;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Header p,
+.ydokpreview_f05Drawer .ydokpreview_f05SectionName p {
+  color: var(--f05-muted);
+}
+.ydokpreview_f05Drawer .ydokpreview_iconButton {
+  color: #e4faf3;
+  border: 1px solid rgba(230, 255, 241, .35);
+  background: rgba(13, 48, 58, .72);
+  border-radius: 12px;
+}
+.ydokpreview_f05Drawer .ydokpreview_iconButton:hover {
+  background: rgba(122, 223, 200, .18);
+}
+/* Glass navigation from the landing page, compact enough for a clinical tool. */
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs {
+  border-color: rgba(230, 255, 241, .29);
+  border-radius: 18px;
+  background: rgba(13, 48, 58, .58);
+  box-shadow: 0 10px 28px rgba(1, 14, 23, .15), inset 0 1px rgba(255, 255, 255, .09);
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice {
+  color: #daeae6;
+  border-radius: 13px;
+  font-weight: 700;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolChoice:hover {
+  background: rgba(153, 241, 220, .15);
+  color: #f8fffd;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolSelected,
+.ydokpreview_f05Drawer .ydokpreview_f05Tabs .ydokpreview_toolSelected:hover {
+  border-color: rgba(187, 255, 234, .82);
+  background: linear-gradient(125deg, #a1f5df 0%, #68d5be 100%);
+  color: #08232b;
+  box-shadow: 0 6px 20px rgba(108, 225, 195, .23), inset 0 1px rgba(255, 255, 255, .30);
+}
+.ydokpreview_f05Drawer .ydokpreview_f05SectionIcon {
+  color: var(--f05-mint);
+  background: rgba(144, 237, 218, .13);
+  border-color: rgba(181, 255, 237, .26);
+  border-radius: 12px;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05SectionName h3 {
+  color: #f7fcf8;
+  font-weight: 780;
+}
+.ydokpreview_f05Drawer .ydokpreview_f05PhaseChip {
+  color: #a1f5df;
+  background: rgba(13, 48, 58, .8);
+  border-color: rgba(161, 245, 223, .43);
+}
+.ydokpreview_f05Drawer .f05ui_body { color: #f7fcf8; }
+.ydokpreview_f05Drawer .f05ui_notice {
+  color: #f4dec1;
+  background: rgba(133, 98, 44, .20);
+  border-color: rgba(245, 207, 150, .36);
+}
+.ydokpreview_f05Drawer .f05ui_ready,
+.ydokpreview_f05Drawer .f05ui_info {
+  color: #d8f4ed;
+  background: rgba(19, 63, 73, .58);
+  border-color: rgba(181, 255, 237, .22);
+}
+.ydokpreview_f05Drawer .f05ui_search {
+  border-color: rgba(181, 255, 237, .39);
+  background: rgba(6, 28, 36, .73);
+  color: #a1f5df;
+  border-radius: 14px;
+}
+.ydokpreview_f05Drawer .f05ui_search:focus-within {
+  border-color: #a2f5e4;
+  box-shadow: 0 0 0 2px rgba(162, 245, 228, .17);
+}
+.ydokpreview_f05Drawer .f05ui_search input { color: #f7fcf8; }
+.ydokpreview_f05Drawer .f05ui_search input::placeholder { color: #aec7c1; }
+.ydokpreview_f05Drawer .f05ui_searchCount,
+.ydokpreview_f05Drawer .f05ui_catalogueHeader span,
+.ydokpreview_f05Drawer .f05ui_footer { color: #accfc6; }
+.ydokpreview_f05Drawer .f05ui_catalogueHeader strong { color: #e4faf3; }
+.ydokpreview_f05Drawer .f05ui_listScroll {
+  scrollbar-color: #547e7e transparent;
+}
+.ydokpreview_f05Drawer .f05ui_testCard {
+  color: #f7fcf8;
+  background: linear-gradient(135deg, rgba(18, 63, 73, .72), rgba(9, 39, 47, .73));
+  border-color: rgba(181, 255, 237, .23);
+  border-radius: 14px;
+}
+.ydokpreview_f05Drawer .f05ui_testCard:hover:enabled {
+  background: rgba(28, 89, 98, .77);
+  border-color: #90edda;
+}
+.ydokpreview_f05Drawer .f05ui_testCardActive {
+  border-color: #90edda;
+  background: rgba(22, 87, 87, .81);
+}
+.ydokpreview_f05Drawer .f05ui_testCard:disabled {
+  color: #e1efed;
+  background: rgba(16, 47, 55, .61);
+  border-color: rgba(175, 212, 205, .21);
+}
+.ydokpreview_f05Drawer .f05ui_testIcon {
+  color: #90edda;
+  background: rgba(144, 237, 218, .12);
+}
+.ydokpreview_f05Drawer .f05ui_testText small { color: #aecbc5; }
+.ydokpreview_f05Drawer .f05ui_status { color: #cde8e0; background: rgba(228, 250, 243, .10); }
+.ydokpreview_f05Drawer .f05ui_status_done { color: #a1f5df; background: rgba(104, 213, 190, .18); }
+.ydokpreview_f05Drawer .f05ui_resultPanel {
+  border-color: rgba(144, 237, 218, .43);
+  background: linear-gradient(135deg, rgba(18, 63, 73, .84), rgba(8, 35, 43, .88));
+}
+.ydokpreview_f05Drawer .f05ui_resultPanelHeader h4,
+.ydokpreview_f05Drawer .f05ui_resultEntry dd { color: #f7fcf8; }
+.ydokpreview_f05Drawer .f05ui_resultEntry dt { color: #b1d4cb; }
+.ydokpreview_f05Drawer .f05ui_showMore {
+  border-color: rgba(161, 245, 223, .34);
+  background: rgba(18, 63, 73, .7);
+  color: #e4faf3;
+  border-radius: 999px;
+}
+.ydokpreview_f05Drawer .f05ui_showMore:hover { border-color: #a1f5df; }
+.ydokpreview_f05Drawer .f05ui_footer { border-color: rgba(216, 250, 239, .13); }
+.ydokpreview_f05Drawer .ydokpreview_toolChoice:focus-visible,
+.ydokpreview_f05Drawer .f05ui_testCard:focus-visible,
+.ydokpreview_f05Drawer .f05ui_showMore:focus-visible,
+.ydokpreview_f05Drawer .ydokpreview_iconButton:focus-visible {
+  outline: 3px solid #a2f5e4;
+  outline-offset: 2px;
+}
+/* Reapply responsive geometry after V3's older media rules. */
+@media (max-width: 610px) {
+  .ydokpreview_drawer.ydokpreview_f05Drawer {
+    left: 0;
+    right: auto;
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
+    border-right: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ydokpreview_drawer.ydokpreview_f05Drawer { animation: none; }
+}
+
+/* F05 clinical measurements: compact, keyboard-accessible result table.
+   The values/ranges/flags all come from the saved case result, never calculated here. */
+.ydokpreview_f05Drawer .f05ui_labScroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(181, 255, 237, .19);
+  border-radius: 11px;
+  background: rgba(4, 25, 33, .42);
+  scrollbar-width: thin;
+  scrollbar-color: #578e89 transparent;
+}
+.ydokpreview_f05Drawer .f05ui_labScroll:focus-visible {
+  outline: 2px solid #a1f5df;
+  outline-offset: 2px;
+}
+.ydokpreview_f05Drawer .f05ui_labTable {
+  width: 100%;
+  min-width: 415px;
+  border-spacing: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #f3fff9;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.ydokpreview_f05Drawer .f05ui_labTable thead {
+  background: rgba(144, 237, 218, .12);
+}
+.ydokpreview_f05Drawer .f05ui_labTable th,
+.ydokpreview_f05Drawer .f05ui_labTable td {
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: middle;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid rgba(181, 255, 237, .13);
+}
+.ydokpreview_f05Drawer .f05ui_labTable tr:last-child th,
+.ydokpreview_f05Drawer .f05ui_labTable tr:last-child td { border-bottom: 0; }
+.ydokpreview_f05Drawer .f05ui_labTable thead th {
+  color: #b8f2e2;
+  font-size: 10px;
+  font-weight: 700;
+}
+.ydokpreview_f05Drawer .f05ui_labTable th:first-child { width: 36%; }
+.ydokpreview_f05Drawer .f05ui_labTable th:nth-child(2) { width: 22%; }
+.ydokpreview_f05Drawer .f05ui_labTable th:nth-child(3) { width: 25%; }
+.ydokpreview_f05Drawer .f05ui_labTable th:nth-child(4) { width: 17%; }
+.ydokpreview_f05Drawer .f05ui_labTable tbody th { font-weight: 600; color: #edf9f5; }
+.ydokpreview_f05Drawer .f05ui_labTable td strong { font-size: 13px; font-weight: 750; }
+.ydokpreview_f05Drawer .f05ui_labTable td small {
+  display: block;
+  margin-top: 3px;
+  color: #b4d1c9;
+  font-size: 10px;
+}
+.ydokpreview_f05Drawer .f05ui_labMuted { color: #a9c3bc; font-size: 10px; }
+.ydokpreview_f05Drawer .f05ui_labFlag {
+  display: inline-block;
+  max-width: 100%;
+  padding: 4px 6px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 650;
+  text-transform: capitalize;
+  overflow-wrap: anywhere;
+}
+.ydokpreview_f05Drawer .f05ui_labFlagAlert {
+  color: #ffe0b5;
+  background: rgba(181, 103, 38, .25);
+}
+.ydokpreview_f05Drawer .f05ui_labFlagNormal {
+  color: #aaf6d9;
+  background: rgba(49, 160, 115, .19);
+}
+.ydokpreview_f05Drawer .f05ui_labFlagNeutral {
+  color: #cadfd9;
+  background: rgba(174, 211, 200, .1);
+}
+@media (max-width: 610px) {
+  .ydokpreview_f05Drawer .f05ui_labTable { font-size: 10px; }
+  .ydokpreview_f05Drawer .f05ui_labTable th,
+  .ydokpreview_f05Drawer .f05ui_labTable td { padding: 8px 6px; }
+}
+
+
+/* F05 authored physical findings + opt-in educational auscultation reference. */
+.ydokpreview_f05Drawer .f05ui_findingBlock {
+  border: 1px solid rgba(144, 237, 218, .29);
+  background: rgba(4, 30, 39, .52);
+  border-radius: 12px;
+  padding: 14px;
+}
+.ydokpreview_f05Drawer .f05ui_findingEyebrow {
+  display: block;
+  color: #90edda;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .10em;
+}
+.ydokpreview_f05Drawer .f05ui_findingText {
+  margin: 9px 0 0;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.6;
+  color: #f8fffd;
+}
+.ydokpreview_f05Drawer .f05ui_findingMeasure {
+  margin: 9px 0 0;
+  color: #d4eae3;
+  font-size: 12px;
+}
+.ydokpreview_f05Drawer .f05ui_audioCard {
+  margin-top: 12px;
+  padding: 13px;
+  border: 1px solid rgba(144, 237, 218, .32);
+  border-radius: 13px;
+  background: rgba(4, 30, 39, .62);
+}
+.ydokpreview_f05Drawer .f05ui_audioHeading {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #f8fffd;
+  font-size: 13px;
+}
+.ydokpreview_f05Drawer .f05ui_audioHeading span {
+  font-size: 10px;
+  color: #ffe1b2;
+}
+.ydokpreview_f05Drawer .f05ui_lungLocation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  color: #beece0;
+  font-size: 11px;
+}
+.ydokpreview_f05Drawer .f05ui_lungLocation svg {
+  width: 52px;
+  height: 46px;
+  flex: none;
+  color: #90edda;
+}
+.ydokpreview_f05Drawer .f05ui_audioCard audio {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: 38px;
+}
+.ydokpreview_f05Drawer .f05ui_audioCard p,
+.ydokpreview_f05Drawer .f05ui_audioCard small {
+  display: block;
+  margin: 10px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #cfdfda;
+}
+.ydokpreview_f05Drawer .f05ui_audioCard a { color: #a1f5df; text-decoration: underline; }
+.ydokpreview_f05Drawer .f05ui_audioCard a:focus-visible {
+  outline: 2px solid #a2f5e4;
+  outline-offset: 2px;
+}
+
+/* F05 authenticated clinical image viewer */
+.f05ui_imageBackdrop{position:fixed;inset:0;z-index:9999;background:rgba(4,14,11,.9);display:grid;place-items:center;padding:24px}
+.f05ui_imageModal{width:min(1100px,95vw);height:min(90vh,850px);display:flex;flex-direction:column;gap:12px;align-items:end}
+.f05ui_imageModal>button{background:#f5faf7;color:#173e32;padding:8px 16px;border-radius:12px;font-weight:700}
+.f05ui_imageFull{max-width:100%;max-height:calc(90vh - 60px);object-fit:contain;align-self:center;display:block;border-radius:12px}

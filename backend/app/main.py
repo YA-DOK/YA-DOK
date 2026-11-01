@@ -82,3 +82,8 @@ app.include_router(published_simulation.router, prefix="/api/v1")
 from app.api.routes import patient_chat
 
 app.include_router(patient_chat.router, prefix="/api/v1")
+
+# F05 clinical catalog and private, session-owned imaging assets.
+from app.feature05 import session_api as f05_session_api
+
+app.include_router(f05_session_api.router, prefix="/api/v1")

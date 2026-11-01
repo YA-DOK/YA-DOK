@@ -1,5 +1,4 @@
 
-import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -554,162 +553,20 @@ def _normalize_examination_name(value: str) -> str:
     return " ".join(normalized.split())
 
 
-def request_examination(
-    session: SimulationSession,
-    examination_name: str,
-) -> dict[str, Any]:
-    """Return examination findings only when they exist in the case."""
+def request_examination(session: SimulationSession, examination_name: str) -> dict[str, Any]:
+    """F05 case-defined, phase-independent examination in an active F03 session."""
     _ensure_active(session)
-
-    examination_name = examination_name.strip()
-
-    if not examination_name:
-        raise SimulationError("Examination name cannot be empty.")
-
-    session.requested_examinations.append(examination_name)
-
-    # Support both keys used by different case-data formats.
-    findings = session.case_data.get("physical_examination")
-
-    if not isinstance(findings, dict) or not findings:
-        findings = session.case_data.get("examination", {})
-
-    if not isinstance(findings, dict):
-        findings = {}
-
-    result = _find_case_result(findings, examination_name)
-
-    # Match equivalent labels such as "Abdominal" and
-    # "Abdominal examination".
-    if result is None:
-        requested_normalized = _normalize_examination_name(
-            examination_name
-        )
-
-        for finding_name, finding_value in findings.items():
-            if (
-                _normalize_examination_name(str(finding_name))
-                == requested_normalized
-            ):
-                result = finding_value
-                break
-
-    if result is None:
-        response = {
-            "available": False,
-            "name": examination_name,
-            "result": None,
-            "message": (
-                "مفيش نتيجة للفحص ده في بيانات الحالة. "
-                "ضيفي نتيجة الفحص تحت physical_examination "
-                "علشان تظهر في المحاكاة."
-            ),
-        }
-    else:
-        response = {
-            "available": True,
-            "name": examination_name,
-            "result": result,
-            "message": "تم استرجاع نتيجة الفحص من بيانات الحالة.",
-        }
-
-    session.messages.append(
-        SimulationMessage(
-            role="user",
-            content=f"Examination requested: {examination_name}",
-            action="request_examination",
-        )
-    )
-
-    session.messages.append(
-        SimulationMessage(
-            role="system",
-            content=json.dumps(response, ensure_ascii=False),
-            action="examination_result",
-        )
-    )
-
-    session.record_event(
-        "examination_requested",
-        {
-            "name": examination_name,
-            "available": response["available"],
-            "result": response["result"],
-        },
-    )
-
-    return response
+    from app.feature05.session_actions import perform_examination
+    return perform_examination(session, examination_name, SimulationError)
 
 
-def request_investigation(
-    session: SimulationSession,
-    investigation_name: str,
-) -> dict[str, Any]:
-    """Return a test result only if it exists in the supplied case."""
+
+def request_investigation(session: SimulationSession, investigation_name: str) -> dict[str, Any]:
+    """F05 case-defined investigation (lab/imaging) available throughout active session."""
     _ensure_active(session)
+    from app.feature05.session_actions import perform_investigation
+    return perform_investigation(session, investigation_name, SimulationError)
 
-    investigation_name = investigation_name.strip()
-
-    if not investigation_name:
-        raise SimulationError(
-            "Investigation name cannot be empty."
-        )
-
-    session.requested_investigations.append(investigation_name)
-
-    investigations = session.case_data.get(
-        "investigations",
-        {},
-    )
-
-    result = _find_case_result(
-        investigations,
-        investigation_name,
-    )
-
-    if result is None:
-        response = {
-            "available": False,
-            "name": investigation_name,
-            "result": None,
-            "message": (
-                "مفيش نتيجة للتحليل ده في بيانات الحالة."
-            ),
-        }
-    else:
-        response = {
-            "available": True,
-            "name": investigation_name,
-            "result": result,
-            "message": "تم استرجاع نتيجة التحليل من بيانات الحالة.",
-        }
-
-    session.messages.append(
-        SimulationMessage(
-            role="user",
-            content=f"Investigation requested: {investigation_name}",
-            action="request_investigation",
-        )
-    )
-
-    session.messages.append(
-        SimulationMessage(
-            role="system",
-            content=json.dumps(response, ensure_ascii=False),
-            action="investigation_result",
-        )
-    )
-
-    session.record_event(
-        "investigation_requested",
-        {
-            "name": investigation_name,
-            "available": response["available"],
-            "result": response["result"],
-        },
-    )
-
-    return response
 
 
 def submit_diagnosis_and_plan(
@@ -761,3 +618,13 @@ def complete_session(
     advance_phase(session, SimulationPhase.COMPLETED)
 
     return session.to_dict()
+
+
+def patient_dialogue_history(messages: list[SimulationMessage]) -> list[dict[str, str]]:
+    """Patient-only history: F05 clinical findings must never reach patient LLM context."""
+    return [
+        {"role": message.role, "content": message.content}
+        for message in messages
+        if (message.role == "user" and message.action == "patient_question")
+        or (message.role == "assistant" and message.action == "patient_response")
+    ]
