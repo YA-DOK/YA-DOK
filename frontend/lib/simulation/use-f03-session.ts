@@ -10,7 +10,7 @@ import {
   type F03Session,
 } from "./f03-live";
 
-type Action = "phase" | "pause" | "resume" | "diagnosis" | "complete";
+type Action = "phase" | "pause" | "resume" | "diagnosis" | "complete" | "examinations" | "investigations";
 
 const phases: F03Phase[] = [
   "introduction",
@@ -59,7 +59,9 @@ function sessionSeconds(session: F03Session): number {
 
   if (pausedAt !== null) pausedTime += end - pausedAt;
 
-  return Math.max(0, Math.floor((end - start - pausedTime) / 1000));
+  // Test attempts use an uninterrupted wall-clock limit, including pause.
+  const duration = session.mode === "test" ? end - start : end - start - pausedTime;
+  return Math.max(0, Math.floor(duration / 1000));
 }
 
 export function useF03Session() {
@@ -74,6 +76,7 @@ export function useF03Session() {
   const storageKey = useRef("");
   const pending = useRef(new Map<string, string>());
   const inFlight = useRef(false);
+  const timeoutCheckedAt = useRef(0);
 
   useEffect(() => {
     if (booted.current) return;
@@ -84,6 +87,15 @@ export function useF03Session() {
         const params = new URLSearchParams(window.location.search);
         const selected: F03Mode =
           params.get("mode") === "test" ? "test" : "training";
+        // Starting from the Case Library is a NEW attempt. Refresh is a resume.
+        const newAttempt = params.get("new") === "1";
+        const requestedResumeId = params.get("resume");
+        if (
+          requestedResumeId !== null &&
+          (newAttempt || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(requestedResumeId))
+        ) {
+          throw new Error("Invalid Resume link. Open Session History and try again.");
+        }
 
         const caseCode = params.get("case") ?? "";
         if (!/^[A-Za-z0-9_-]{3,120}$/.test(caseCode)) {
@@ -103,7 +115,8 @@ export function useF03Session() {
         storageKey.current = key;
 
         let loaded: F03Session | null = null;
-        const savedId = sessionStorage.getItem(key);
+        // Explicit Resume overrides the browser's last-session cache.
+        const savedId = requestedResumeId ?? (newAttempt ? null : sessionStorage.getItem(key));
 
         if (savedId) {
           try {
@@ -111,13 +124,24 @@ export function useF03Session() {
             if (
               loaded.case_code !== caseCode ||
               loaded.mode !== selected ||
+              loaded.is_completed ||
               !loaded.case_version_id
             ) {
+              if (requestedResumeId !== null) {
+                throw new Error(
+                  loaded.is_completed
+                    ? "This attempt has ended. Start a new attempt from the Case Library."
+                    : "This Resume link does not match the saved case or mode."
+                );
+              }
               loaded = null;
               sessionStorage.removeItem(key);
             }
           } catch (err) {
-            if (!(err instanceof F03HttpError) || err.status !== 404) {
+            if (
+              requestedResumeId !== null ||
+              !(err instanceof F03HttpError) || err.status !== 404
+            ) {
               throw err;
             }
             sessionStorage.removeItem(key);
@@ -126,7 +150,15 @@ export function useF03Session() {
 
         const current = loaded ?? await f03Live.startPublished(caseCode, selected);
 
-        if (!loaded) sessionStorage.setItem(key, current.session_id);
+        // Cache the explicit Resume ID as the latest active attempt in this tab.
+        sessionStorage.setItem(key, current.session_id);
+
+        // Do not create another attempt when the student refreshes this URL.
+        if (newAttempt) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("new");
+          window.history.replaceState(window.history.state, "", url.toString());
+        }
 
         setSession(current);
         setMode(current.mode ?? selected);
@@ -146,7 +178,27 @@ export function useF03Session() {
   useEffect(() => {
     if (!session) return;
 
-    const tick = () => setElapsed(sessionSeconds(session));
+    const tick = () => {
+      const seconds = sessionSeconds(session);
+      setElapsed(seconds);
+      const duration = session.duration_minutes;
+      if (
+        session.mode === "test" && !session.is_completed &&
+        typeof duration === "number" && duration > 0 &&
+        seconds >= duration * 60 && !inFlight.current &&
+        Date.now() - timeoutCheckedAt.current >= 5000
+      ) {
+        timeoutCheckedAt.current = Date.now();
+        void f03Live.get(session.session_id).then((fresh) => {
+          setSession(fresh);
+          if (fresh.is_completed && storageKey.current) {
+            sessionStorage.removeItem(storageKey.current);
+          }
+        }).catch((err: unknown) => {
+          setError(err instanceof Error ? err.message : "Could not confirm time limit.");
+        });
+      }
+    };
     tick();
 
     const timer = window.setInterval(tick, 1000);
@@ -175,6 +227,9 @@ export function useF03Session() {
 
       const updated = await f03Live.get(session.session_id);
       setSession(updated);
+      if (updated.is_completed && storageKey.current) {
+        sessionStorage.removeItem(storageKey.current);
+      }
       pending.current.delete(identity);
       setError("");
       return true;
@@ -192,14 +247,19 @@ export function useF03Session() {
   }
 
   async function finish(diagnosis: string, plan: string): Promise<boolean> {
-    if (!session || session.current_phase !== "diagnosis_and_plan") {
-      setError("Complete the earlier phases before ending this session.");
+    if (!session || session.is_completed || session.is_paused) {
+      setError("Resume an active session before ending it.");
       return false;
     }
 
-    if (!session.diagnosis || !session.treatment_plan) {
-      if (!diagnosis.trim() || !plan.trim()) {
-        setError("Diagnosis and treatment plan are required.");
+    if (!session.diagnosis) {
+      if (!diagnosis.trim()) {
+        setError("A diagnosis is required to complete the session.");
+        return false;
+      }
+
+      if (diagnosis.trim().length > 3000 || plan.trim().length > 5000) {
+        setError("Diagnosis must be at most 3000 characters; treatment at most 5000.");
         return false;
       }
 
@@ -218,7 +278,11 @@ export function useF03Session() {
     if (storageKey.current) {
       sessionStorage.removeItem(storageKey.current);
     }
-    window.location.reload();
+    // "Try Again" must not reopen the same pinned Resume ID.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("resume");
+    url.searchParams.set("new", "1");
+    window.location.assign(url.toString());
   }
 
   const currentPhase = session?.current_phase ?? "introduction";

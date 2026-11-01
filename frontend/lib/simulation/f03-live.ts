@@ -35,6 +35,28 @@ export type F03Session = {
   }[];
 };
 
+export type F05ClinicalOption = { id: string; label: string; category: string };
+export type F05ClinicalOptions = {
+  session_id: string;
+  current_phase: F03Phase;
+  examinations: F05ClinicalOption[];
+  investigations: F05ClinicalOption[];
+  imaging: F05ClinicalOption[];
+};
+
+export type F05ClinicalReview = {
+  status: "review_only_not_graded";
+  request_counts: {
+    examination: number;
+    investigation_or_imaging: number;
+    repeated: number;
+    unavailable: number;
+    not_indicated: number;
+    unrated: number;
+  };
+  essential_actions: { total: number; attempted: number; not_requested: number };
+};
+
 export class F03HttpError extends Error {
   constructor(
     public status: number,
@@ -82,11 +104,25 @@ async function request<T>(
         ? (data as { detail: unknown }).detail
         : null;
 
+    const validationMessage = Array.isArray(detail)
+      ? detail
+          .filter((entry): entry is { loc?: unknown; msg?: unknown } =>
+            entry !== null && typeof entry === "object")
+          .slice(0, 3)
+          .map((entry) => {
+            const location = Array.isArray(entry.loc)
+              ? entry.loc.filter((part): part is string | number =>
+                  typeof part === "string" || typeof part === "number").join(".")
+              : "request";
+            return `${location}: ${typeof entry.msg === "string" ? entry.msg : "Invalid value"}`;
+          })
+          .join("; ")
+      : "";
     throw new F03HttpError(
       response.status,
       typeof detail === "string"
         ? detail
-        : `Simulation API returned HTTP ${response.status}`
+        : validationMessage || `Simulation API returned HTTP ${response.status}`
     );
   }
 
@@ -94,6 +130,13 @@ async function request<T>(
 }
 
 export const f03Live = {
+  clinicalOptions(sessionId: string) {
+    return request<F05ClinicalOptions>(`/sessions/${sessionId}/clinical-options`);
+  },
+  clinicalReview(sessionId: string) {
+    return request<F05ClinicalReview>(`/sessions/${sessionId}/clinical-review`);
+  },
+
 
 
   startPublished(caseCode: string, mode: F03Mode) {

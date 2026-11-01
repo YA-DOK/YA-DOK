@@ -205,7 +205,7 @@ def test_examination_returns_unavailable_when_result_missing():
     assert response.json()["result"] is None
 
 
-def test_examination_rejected_in_wrong_phase():
+def test_examination_does_not_require_phase_transition():
     session_id = create_test_session()
 
     response = client.post(
@@ -213,7 +213,9 @@ def test_examination_rejected_in_wrong_phase():
         json={"examination_name": "General examination"},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 200
+    assert response.json()["available"] is False
+    assert client.get(f"/api/v1/simulation/sessions/{session_id}").json()["current_phase"] == "introduction"
 
 
 def test_investigation_returns_unavailable_when_result_missing():
@@ -378,3 +380,63 @@ def test_user_cannot_pause_another_users_simulation():
         app.dependency_overrides[get_current_user] = (
             override_get_current_user
         )
+
+
+def test_early_diagnosis_without_treatment_via_api():
+    session_id = create_test_session()
+    diagnosis_response = client.post(
+        f"/api/v1/simulation/sessions/{session_id}/diagnosis",
+        json={"diagnosis": "Provisional early diagnosis"},
+    )
+    assert diagnosis_response.status_code == 200
+    assert diagnosis_response.json()["treatment_plan"] == ""
+
+    complete_response = client.post(
+        f"/api/v1/simulation/sessions/{session_id}/complete"
+    )
+    assert complete_response.status_code == 200
+    assert complete_response.json()["current_phase"] == "completed"
+    assert complete_response.json()["is_completed"] is True
+
+    reloaded = client.get(f"/api/v1/simulation/sessions/{session_id}")
+    assert reloaded.status_code == 200
+    assert reloaded.json()["diagnosis"] == "Provisional early diagnosis"
+    assert [e["event_type"] for e in reloaded.json()["events"]][-2:] == [
+        "phase_changed", "session_completed",
+    ]
+
+
+def test_history_contains_only_owned_sessions():
+    own_id = create_test_session()
+    other_id = create_test_session()
+    simulation.session_owners[other_id] = "another-student"
+
+    response = client.get("/api/v1/simulation/sessions")
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert [item["session_id"] for item in items] == [own_id]
+    assert items[0]["is_completed"] is False
+    assert "case_data" not in items[0]
+    assert "ground_truth" not in response.text
+
+
+def test_completed_session_appears_in_history():
+    session_id = create_test_session()
+    diagnosis_response = client.post(
+        f"/api/v1/simulation/sessions/{session_id}/diagnosis",
+        json={"diagnosis": "Headache"},
+    )
+    assert diagnosis_response.status_code == 200
+    response = client.post(f"/api/v1/simulation/sessions/{session_id}/complete")
+    assert response.status_code == 200
+
+    history = client.get("/api/v1/simulation/sessions")
+    assert history.status_code == 200
+    item = next(item for item in history.json()["items"] if item["session_id"] == session_id)
+    assert item["is_completed"] is True
+    assert item["diagnosis"] == "Headache"
+
+
+def test_history_limit_validation():
+    assert client.get("/api/v1/simulation/sessions?limit=0").status_code == 422
+    assert client.get("/api/v1/simulation/sessions?limit=101").status_code == 422

@@ -1,4 +1,8 @@
 "use client";
+
+import F05ClinicalWorkspace from "@/components/simulation/F05ClinicalWorkspace";
+import F05ClinicalReview from "@/components/simulation/F05ClinicalReview";
+import type { F03Session } from "@/lib/simulation/f03-live";
 import Link from "next/link";
 import { useF03Session } from "@/lib/simulation/use-f03-session";
 import { createClient } from "@/lib/supabase/client";
@@ -118,6 +122,34 @@ const vitals = [
   { name: "Oxygen Saturation", short: "SpO₂", value: "--", unit: "%", Icon: Activity },
 ];
 
+// Only show measurements the student has actually requested and the server saved.
+// Never derive vital values from a private case blueprint or a placeholder.
+function savedVital(session: F03Session | null, short: string): { value: string; unit?: string } | null {
+  if (!session) return null;
+  const aliases: Record<string, string[]> = {
+    HR: ["heart_rate", "pulse", "pulse_rate", "hr"],
+    RR: ["respiratory_rate", "respiration_rate", "rr"],
+    Temp: ["temperature", "body_temperature", "temp"],
+    BP: ["blood_pressure", "bp"],
+    "SpO₂": ["oxygen_saturation", "spo2", "spo_2", "o2_saturation"],
+  };
+  const normalize = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const choices = new Set((aliases[short] ?? []).map(normalize));
+  for (const event of [...session.events].reverse()) {
+    if (event.event_type !== "examination_requested" ||
+        event.details.available === false || event.details.repeated === true) continue;
+    const result = event.details.result;
+    if (!result || typeof result !== "object" || Array.isArray(result)) continue;
+    const values = result as Record<string, unknown>;
+    const names = [String(event.details.name ?? ""), String(values.label ?? "")];
+    if (!names.some((name) => choices.has(normalize(name)))) continue;
+    const value = values.value;
+    if ((typeof value !== "string" && typeof value !== "number") || String(value).trim() === "") continue;
+    return { value: String(value), unit: typeof values.unit === "string" ? values.unit : undefined };
+  }
+  return null;
+}
+
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   const rest = seconds % 60;
@@ -134,8 +166,6 @@ export default function SimulationPreview() {
     ended,
     busy,
     error: liveError,
-    currentPhase,
-    nextPhase,
     runAction,
     finish,
     restart,
@@ -157,8 +187,8 @@ export default function SimulationPreview() {
   useEffect(() => {
     if (chatOpen) chatTailRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [chatOpen, patientChat.messages.length]);
-  const canChat = Boolean(liveSession) && currentPhase === "history_taking" && !paused && !ended && !busy;
-  // F04_SCENE_CHAT_V08: the drawer is history-only; compose in the clinic dock.
+  const canChat = Boolean(liveSession) && !paused && !ended && !busy;
+  // The patient can be questioned at any point during an active session.
   const latestPatientReply = [...patientChat.messages].reverse().find((item) => item.role === "patient")?.content;
 
 
@@ -213,8 +243,12 @@ export default function SimulationPreview() {
 
 
 
-  const time = formatTime(elapsed);
+  const hasTestDeadline = mode === "test" && typeof liveSession?.duration_minutes === "number" && liveSession.duration_minutes > 0;
+  const remainingSeconds = hasTestDeadline ? Math.max(0, liveSession!.duration_minutes! * 60 - elapsed) : elapsed;
+  const time = formatTime(remainingSeconds);
   const activeTool = tools.find((tool) => tool.id === selectedTool) ?? tools[0];
+  const vitalReadings = vitals.map((vital) => ({ ...vital, recorded: savedVital(liveSession, vital.short) }));
+  const hasRecordedVitals = vitalReadings.some((vital) => vital.recorded !== null);
 
   function resetPreview() {
     restart();
@@ -236,6 +270,7 @@ export default function SimulationPreview() {
   return (
     <main className={styles.root}>
       <link rel="stylesheet" href="/simulation/preview-ui.css" />
+      <link rel="stylesheet" href="/simulation/f05-workspace.css" />
       <link rel="stylesheet" href="/simulation/f04-inline-chat-v08.css" />
       <div className={styles.environment} aria-hidden="true">
         <div className={styles.fallback}>
@@ -304,7 +339,7 @@ export default function SimulationPreview() {
           <div className={`${styles.glass} ${styles.timer}`}>
             <Clock3 size={17} />
             <strong>{time}</strong>
-            <small>Elapsed</small>
+            <small>{hasTestDeadline ? "Remaining" : "Elapsed"}</small>
           </div>
         </div>
 
@@ -342,9 +377,9 @@ export default function SimulationPreview() {
           <button
             type="button"
             key={id}
-            title={`${label} - F05 pending`}
-            aria-label={`${label} - F05 pending`}
-            disabled
+            title={`Open ${label}`}
+            aria-label={`Open ${label}`}
+            disabled={!liveSession}
             aria-pressed={selectedTool === id}
             className={`${styles.railButton} ${
               selectedTool === id ? styles.activeTool : ""
@@ -385,49 +420,35 @@ export default function SimulationPreview() {
       </div>
     </section>
 
-      <section className={`${styles.glass} ${styles.encounterCard}`}>
-        <div className={styles.cardHeading}><ClipboardList size={18} /> Encounter Log</div>
-        <p>Phase: {currentPhase.replaceAll("_", " ")}</p>
-        <p className={styles.subtle}>
-          {liveSession
-            ? `${liveSession.events.length} saved events`
-            : "Connecting to backend..."}
-        </p>
-        {nextPhase && nextPhase !== "completed" && (
-          <button
-            type="button"
-            className={styles.dockButton}
-            style={{ minHeight: 36, width: "100%", marginTop: 12 }}
-            disabled={!liveSession || busy || paused || ended}
-            onClick={() => void runAction("phase", { phase: nextPhase })}
-          >
-            Next: {nextPhase.replaceAll("_", " ")}
-          </button>
-        )}
-        <div className={styles.logTime}><Clock3 size={14} /> {formatTime(elapsed)}</div>
-      </section>
 
       <section className={`${styles.glass} ${styles.vitalsPanel}`}>
         <div className={styles.vitalsHeading}>
           <span><Activity size={19} /> Vital Signs</span>
-          <small>Not measured</small>
+          <small>{hasRecordedVitals ? "Recorded" : "Not measured"}</small>
         </div>
         <div className={styles.vitalGrid}>
-          {vitals.map(({ name, short, value, unit, Icon }) => (
+          {vitalReadings.map(({ name, short, recorded, unit, Icon }) => (
             <div className={styles.vitalItem} key={name} title={name}>
               <span className={styles.vitalName}><Icon size={16} />{short}</span>
-              <strong>{value}</strong>
-              <small>{unit}</small>
+              <strong>{recorded?.value ?? "--"}</strong>
+              <small>{recorded?.unit || unit}</small>
             </div>
           ))}
         </div>
-        <p className={styles.vitalsDisclaimer}>Readings are unavailable until clinical examination is connected.</p>
+        <p className={styles.vitalsDisclaimer}>Readings appear after you request the relevant examination.</p>
+        <button
+          type="button"
+          className={styles.dockButton}
+          disabled={!liveSession}
+          onClick={() => { setSelectedTool("vitals"); setToolPanelOpen(true); }}
+          style={{ marginTop: 10, minHeight: 36, width: "100%", justifyContent: "center" }}
+        >Open Vital Signs</button>
       </section>
 
-      {!chatOpen && currentPhase === "history_taking" && (patientChat.sending || latestPatientReply) && (
+      {!chatOpen && (patientChat.sending || latestPatientReply) && (
         <div className="f04v08-scene-reply" aria-live="polite" aria-atomic="true">
           <div className="f04v08-reply-heading">
-            <MessageCircle size={15} /> {patientChat.sending ? "Patient is responding..." : "Patient"}
+            <MessageCircle size={15} /> {patientChat.sending ? "YA-DOK is thinking..." : "Patient"}
           </div>
           <p dir="auto">{patientChat.sending ? "بيفكر في الرد..." : latestPatientReply}</p>
         </div>
@@ -441,7 +462,8 @@ export default function SimulationPreview() {
 
       <footer className={`${styles.glass} ${styles.dock} f04v08-dock`}>
         <button className={styles.dockButton} onClick={() => void runAction(paused ? "resume" : "pause")}
-          disabled={!liveSession || busy || ended}>
+          title={mode === "test" ? "The assessment clock cannot be paused" : undefined}
+          disabled={!liveSession || busy || ended || mode === "test"}>
           {paused ? <Play size={18} /> : <Pause size={18} />}
           <span>{paused ? "Resume" : "Pause"}</span>
         </button>
@@ -464,7 +486,7 @@ export default function SimulationPreview() {
             className="f04v08-dock-input"
             aria-label="Type your question to the patient"
             dir="auto"
-            placeholder={canChat ? "اكتب سؤالك للمريض هنا..." : "المحادثة متاحة أثناء أخذ التاريخ المرضي"}
+            placeholder={canChat ? "اكتب سؤالك للمريض هنا..." : "المحادثة غير متاحة حاليًا"}
             value={patientChat.draft}
             onChange={(event) => patientChat.setDraft(event.target.value)}
             autoComplete="off"
@@ -482,7 +504,7 @@ export default function SimulationPreview() {
           </button>
         </form>
 
-        <button className={styles.endButton} onClick={() => setConfirmEnd(true)} disabled={ended}>
+        <button className={styles.endButton} onClick={() => setConfirmEnd(true)} disabled={!liveSession || busy || paused || ended}>
           <span>End Session</span>
           <ChevronRight size={18} />
         </button>
@@ -494,28 +516,36 @@ export default function SimulationPreview() {
       )}
 
       {toolPanelOpen && (
-        <div className={styles.overlay} onClick={() => setToolPanelOpen(false)}>
-          <aside className={styles.drawer} onClick={(event) => event.stopPropagation()}>
-            <div className={styles.drawerHeader}>
-              <div><small>CLINICAL WORKSPACE</small><h2>Diagnostic Tools</h2></div>
+        <div className={`${styles.overlay} ydokpreview_f05Overlay`} onClick={() => setToolPanelOpen(false)}>
+          <aside className={`${styles.drawer} ydokpreview_f05Drawer`} onClick={(event) => event.stopPropagation()} aria-label="Clinical workspace">
+            <div className={`${styles.drawerHeader} ydokpreview_f05Header`}>
+              <div><small>CLINICAL WORKSPACE</small><h2>Diagnostic Tools</h2><p>Request a finding to reveal the case-defined result.</p></div>
               <button className={styles.iconButton} onClick={() => setToolPanelOpen(false)} aria-label="Close tools"><X /></button>
             </div>
-            <div className={styles.toolList}>
+            <div className={`${styles.toolList} ydokpreview_f05Tabs`}>
               {tools.map(({ id, label, Icon }) => (
                 <button
                   key={id}
                   className={`${styles.toolChoice} ${selectedTool === id ? styles.toolSelected : ""}`}
+                  aria-pressed={selectedTool === id}
+                  type="button"
                   onClick={() => setSelectedTool(id)}
                 >
                   <Icon size={19} /> {label} <ChevronRight size={15} />
                 </button>
               ))}
             </div>
-            <div className={styles.drawerDetail}>
-              <activeTool.Icon size={27} />
-              <h3>{activeTool.label}</h3>
-              <p>This clinical workspace is ready for its Feature 05 data and actions. No examination or investigation result is invented in this preview.</p>
-              <span>Awaiting clinical module integration</span>
+            <div className={`${styles.drawerDetail} ydokpreview_f05Detail`}>
+              <div className="ydokpreview_f05SectionHeading">
+                <div className="ydokpreview_f05SectionIcon"><activeTool.Icon size={24}/></div>
+                <div className="ydokpreview_f05SectionName"><h3>{activeTool.label}</h3><p>Case-linked tools and saved results</p></div>
+              </div>
+              {liveSession && <F05ClinicalWorkspace
+                session={liveSession}
+                section={selectedTool}
+                busy={busy}
+                runAction={(action, body) => runAction(action, body)}
+              />}
             </div>
           </aside>
         </div>
@@ -525,7 +555,7 @@ export default function SimulationPreview() {
         <div className={styles.overlay} onClick={() => setChatOpen(false)}>
           <aside className={`${styles.drawer} ${styles.chatDrawer}`} onClick={(event) => event.stopPropagation()}>
             <div className={styles.drawerHeader}>
-              <div><small>F04 · SAVED CONVERSATION</small><h2>Chat History</h2></div>
+              <div><small>LIVE PATIENT</small><h2>Chat History</h2></div>
               <button className={styles.iconButton} aria-label="Close chat" onClick={() => setChatOpen(false)}><X /></button>
             </div>
             <div className={styles.transcript} aria-live="polite" aria-label="Saved patient conversation">
@@ -552,7 +582,7 @@ export default function SimulationPreview() {
             )}
             {!canChat && (
               <p style={{ color: "#edd0aa", fontSize: 12, marginBottom: 8 }}>
-                {!liveSession ? "Connecting to your simulation..." : ended ? "Session completed · chat is read-only." : paused ? "Resume the session to chat." : currentPhase !== "history_taking" ? "Patient chat is available during History Taking." : "Finish the current action first."}
+                {!liveSession ? "Connecting to your simulation..." : ended ? "Session completed · chat is read-only." : paused ? "Resume the session to chat." : "Finish the current action first."}
               </p>
             )}
             <p className="f04v08-history-note">المحادثة محفوظة تلقائيًا. اكتب سؤالك من الشريط السفلي في العيادة.</p>
@@ -565,10 +595,10 @@ export default function SimulationPreview() {
           <div className={`${styles.glass} ${styles.modal}`} role="dialog" aria-modal="true" aria-labelledby="end-title">
             <h2 id="end-title">Complete this session?</h2>
             <p>
-              Finish the previous phases, then submit your diagnosis and
-              treatment plan to complete this saved session.
+              You can finish at any point. Submit your diagnosis; skipped clinical
+              steps will remain recorded as not performed. Treatment is optional.
             </p>
-            {currentPhase === "diagnosis_and_plan" && !liveSession?.diagnosis && (
+            {!liveSession?.diagnosis && (
               <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
                 <textarea
                   aria-label="Diagnosis"
@@ -578,8 +608,8 @@ export default function SimulationPreview() {
                   style={{ padding: 12, background: "#18342d", color: "white", borderRadius: 10 }}
                 />
                 <textarea
-                  aria-label="Treatment plan"
-                  placeholder="Your treatment plan"
+                  aria-label="Treatment plan (optional)"
+                  placeholder="Treatment plan (optional)"
                   value={planText}
                   onChange={(e) => setPlanText(e.target.value)}
                   style={{ padding: 12, background: "#18342d", color: "white", borderRadius: 10 }}
@@ -590,7 +620,7 @@ export default function SimulationPreview() {
               <button className={styles.dockButton} onClick={() => setConfirmEnd(false)}>Cancel</button>
               <button
               className={styles.endButton}
-              disabled={!liveSession || busy || currentPhase !== "diagnosis_and_plan"}
+              disabled={!liveSession || busy || paused || ended}
               onClick={() => {
                 void finish(diagnosisText, planText).then((done) => {
                   if (done) setConfirmEnd(false);
@@ -606,10 +636,11 @@ export default function SimulationPreview() {
 
       {ended && (
         <div className={styles.modalOverlay}>
-          <div className={`${styles.glass} ${styles.modal}`} role="status">
+          <div className={`${styles.glass} ${styles.modal}`} role="status" style={{ maxHeight: "90vh", overflowY: "auto" }}>
             <CheckCircle2 size={36} className={styles.successIcon} />
             <h2>Session completed</h2>
             <p>This simulation session was completed and saved.</p>
+            {liveSession && <F05ClinicalReview sessionId={liveSession.session_id} />}
             <div className={styles.modalActions}>
               <a className={styles.dockButton} href="/dashboard">Dashboard</a>
               <button className={styles.endButton} onClick={resetPreview}>Try Again</button>

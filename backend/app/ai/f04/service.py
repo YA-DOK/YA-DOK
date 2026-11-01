@@ -257,13 +257,13 @@ class ChatService:
         content = request.content.strip()
         if not content:
             raise failure(422, "EMPTY_MESSAGE", "Please enter a question.")
-        if snapshot.is_completed or snapshot.is_paused or snapshot.phase != "history_taking":
+        if snapshot.is_completed or snapshot.is_paused:
             prior = await self.repository.find_completed_reply(
                 session_id=session_id, client_message_id=request.client_message_id, content=content,
             )
             if prior is not None:
                 return prior
-            raise failure(409, "CHAT_NOT_ALLOWED", "The simulation phase does not accept patient chat.")
+            raise failure(409, "CHAT_NOT_ALLOWED", "Patient chat requires an active, unpaused session.")
         projection = project_history(snapshot.blueprint)
         expected_spans = question_parts(content)
         if not expected_spans or len(expected_spans) > 8:

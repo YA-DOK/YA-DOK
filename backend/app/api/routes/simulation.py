@@ -3,7 +3,7 @@ import os
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from app.ai.llm.openrouter import OpenRouterProvider
@@ -202,7 +202,7 @@ class InvestigationRequest(BaseModel):
 
 class DiagnosisRequest(BaseModel):
     diagnosis: str = Field(..., min_length=1, max_length=3000)
-    treatment_plan: str = Field(..., min_length=1, max_length=5000)
+    treatment_plan: str = Field(default="", max_length=5000)
 
 
 def get_session(session_id: str) -> SimulationSession:
@@ -399,6 +399,111 @@ def start_simulation(
         ) from exc
 
     return session.to_dict()
+
+
+@router.get("/sessions")
+def list_my_simulation_sessions(
+    user: CurrentUser,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+):
+    """List only the authenticated student's sessions; never return case_data."""
+    user_id = str(user.get("id", ""))
+    if not user_id:
+        raise HTTPException(401, "Authenticated user ID is missing.")
+
+    if (pg := _pg_service()) is not None:
+        from sqlalchemy import select
+
+        from app.models.case import CaseVersion, ClinicalCase
+        from app.models.simulation_session import SimulationSessionModel
+
+        try:
+            uid = UUID(user_id)
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(401, "Invalid authenticated user ID.") from exc
+
+        # Sync overdue assessments before listing history. No nested DB sessions:
+        # the short lookup transaction ends before pg.load takes a row lock.
+        from datetime import UTC, datetime, timedelta
+
+        with pg.session_factory() as db:
+            candidates = db.scalars(
+                select(SimulationSessionModel)
+                .where(
+                    SimulationSessionModel.user_id == uid,
+                    SimulationSessionModel.is_completed.is_(False),
+                    SimulationSessionModel.state_json["mode"].astext == "test",
+                )
+                .order_by(SimulationSessionModel.created_at.desc())
+                .limit(limit)
+            ).all()
+            due_ids = []
+            for row in candidates:
+                minutes = (row.state_json or {}).get("duration_minutes")
+                start = row.created_at
+                if (
+                    isinstance(minutes, (int, float))
+                    and not isinstance(minutes, bool)
+                    and minutes > 0 and start is not None
+                ):
+                    if start.tzinfo is None:
+                        start = start.replace(tzinfo=UTC)
+                    if datetime.now(UTC) >= start + timedelta(minutes=minutes):
+                        due_ids.append(str(row.id))
+        for session_id in due_ids:
+            pg.load(user_id, session_id)
+
+        with pg.session_factory() as db:
+            rows = db.execute(
+                select(SimulationSessionModel, ClinicalCase.case_code)
+                .outerjoin(
+                    CaseVersion,
+                    SimulationSessionModel.case_version_id == CaseVersion.id,
+                )
+                .outerjoin(ClinicalCase, CaseVersion.case_id == ClinicalCase.id)
+                .where(SimulationSessionModel.user_id == uid)
+                .order_by(
+                    SimulationSessionModel.created_at.desc(),
+                    SimulationSessionModel.id.desc(),
+                )
+                .limit(limit)
+            ).all()
+
+            return {"items": [
+                {
+                    "session_id": str(row.id),
+                    "case_code": code or (row.state_json or {}).get("case_code"),
+                    "mode": (row.state_json or {}).get("mode", "training"),
+                    "current_phase": row.current_phase,
+                    "is_completed": row.is_completed,
+                    "is_paused": row.is_paused,
+                    "diagnosis": row.diagnosis,
+                    "created_at": row.created_at.isoformat(),
+                    "updated_at": row.updated_at.isoformat(),
+                }
+                for row, code in rows
+            ]}
+
+    # In-memory development fallback. Real persistent history uses PostgreSQL.
+    owned = [
+        session for session_id, session in sessions.items()
+        if session_owners.get(session_id) == user_id
+    ]
+    owned.reverse()
+    return {"items": [
+        {
+            "session_id": session.session_id,
+            "case_code": getattr(session, "case_code", None),
+            "mode": getattr(session, "mode", "training"),
+            "current_phase": session.current_phase.value,
+            "is_completed": session.is_completed,
+            "is_paused": session.is_paused,
+            "diagnosis": session.diagnosis,
+            "created_at": session.events[0].timestamp.isoformat() if session.events else None,
+            "updated_at": session.events[-1].timestamp.isoformat() if session.events else None,
+        }
+        for session in owned[:limit]
+    ]}
 
 
 @router.get("/sessions/{session_id}")

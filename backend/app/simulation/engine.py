@@ -1,8 +1,7 @@
 
-import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 from uuid import uuid4
@@ -186,6 +185,59 @@ def create_session(
     return session
 
 
+def test_time_limit_reached(
+    session: SimulationSession,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    """Only published, timed TEST attempts have a wall-clock deadline."""
+    if session.is_completed or getattr(session, "mode", "training") != "test":
+        return False
+    minutes = getattr(session, "duration_minutes", None)
+    if not isinstance(minutes, (int, float)) or isinstance(minutes, bool) or minutes <= 0:
+        return False
+    created = next((event for event in session.events if event.event_type == "session_created"), None)
+    if created is None:
+        return False
+    start = created.timestamp
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=UTC)
+    current = now or utc_now()
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=UTC)
+    return current >= start + timedelta(minutes=minutes)
+
+
+def expire_test_session_if_due(
+    session: SimulationSession,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    """Persistable, idempotent timeout without forcing a diagnosis."""
+    if not test_time_limit_reached(session, now=now):
+        return False
+    old_phase = session.current_phase
+    session.current_phase = SimulationPhase.COMPLETED
+    session.is_completed = True
+    session.is_paused = False
+    session.record_event(
+        "phase_changed",
+        {"from_phase": old_phase.value, "to_phase": "completed", "reason": "time_limit"},
+        phase=SimulationPhase.COMPLETED,
+    )
+    session.record_event(
+        "session_timed_out",
+        {"duration_minutes": session.duration_minutes, "previous_phase": old_phase.value},
+        phase=SimulationPhase.COMPLETED,
+    )
+    session.record_event(
+        "session_completed",
+        {"completed": True, "reason": "time_limit"},
+        phase=SimulationPhase.COMPLETED,
+    )
+    return True
+
+
 def _ensure_active(session: SimulationSession) -> None:
     """Reject actions when a session is completed or paused."""
     if session.is_completed:
@@ -270,21 +322,16 @@ def advance_phase(
     session: SimulationSession,
     requested_phase: SimulationPhase,
 ) -> SimulationPhase:
-    """Advance the session by exactly one phase and log it."""
+    """Advance sequentially, except completion after a submitted diagnosis."""
     _ensure_active(session)
 
     previous_phase = session.current_phase
-    next_phase = transition_phase(
-        previous_phase,
-        requested_phase,
-    )
-
-    if next_phase == SimulationPhase.COMPLETED and (
-        not session.diagnosis or not session.treatment_plan
-    ):
-        raise SimulationError(
-            "Submit a diagnosis and treatment plan before completion."
-        )
+    if requested_phase == SimulationPhase.COMPLETED:
+        if not session.diagnosis:
+            raise SimulationError("Submit a diagnosis before completion.")
+        next_phase = SimulationPhase.COMPLETED
+    else:
+        next_phase = transition_phase(previous_phase, requested_phase)
 
     session.current_phase = next_phase
 
@@ -316,10 +363,7 @@ def ask_patient(
     responder: Callable[..., str] | None = None,
 ) -> str:
     """Record a student's question and obtain a patient response."""
-    _ensure_phase(
-        session,
-        SimulationPhase.HISTORY_TAKING,
-    )
+    _ensure_active(session)
 
     question = question.strip()
 
@@ -402,10 +446,7 @@ async def ask_patient_async(
     patient_agent: Any,
 ) -> str:
     """Ask the patient using an async PatientAgent."""
-    _ensure_phase(
-        session,
-        SimulationPhase.HISTORY_TAKING,
-    )
+    _ensure_active(session)
 
     question = question.strip()
 
@@ -512,168 +553,20 @@ def _normalize_examination_name(value: str) -> str:
     return " ".join(normalized.split())
 
 
-def request_examination(
-    session: SimulationSession,
-    examination_name: str,
-) -> dict[str, Any]:
-    """Return examination findings only when they exist in the case."""
-    _ensure_phase(
-        session,
-        SimulationPhase.EXAMINATION,
-    )
-
-    examination_name = examination_name.strip()
-
-    if not examination_name:
-        raise SimulationError("Examination name cannot be empty.")
-
-    session.requested_examinations.append(examination_name)
-
-    # Support both keys used by different case-data formats.
-    findings = session.case_data.get("physical_examination")
-
-    if not isinstance(findings, dict) or not findings:
-        findings = session.case_data.get("examination", {})
-
-    if not isinstance(findings, dict):
-        findings = {}
-
-    result = _find_case_result(findings, examination_name)
-
-    # Match equivalent labels such as "Abdominal" and
-    # "Abdominal examination".
-    if result is None:
-        requested_normalized = _normalize_examination_name(
-            examination_name
-        )
-
-        for finding_name, finding_value in findings.items():
-            if (
-                _normalize_examination_name(str(finding_name))
-                == requested_normalized
-            ):
-                result = finding_value
-                break
-
-    if result is None:
-        response = {
-            "available": False,
-            "name": examination_name,
-            "result": None,
-            "message": (
-                "مفيش نتيجة للفحص ده في بيانات الحالة. "
-                "ضيفي نتيجة الفحص تحت physical_examination "
-                "علشان تظهر في المحاكاة."
-            ),
-        }
-    else:
-        response = {
-            "available": True,
-            "name": examination_name,
-            "result": result,
-            "message": "تم استرجاع نتيجة الفحص من بيانات الحالة.",
-        }
-
-    session.messages.append(
-        SimulationMessage(
-            role="user",
-            content=f"Examination requested: {examination_name}",
-            action="request_examination",
-        )
-    )
-
-    session.messages.append(
-        SimulationMessage(
-            role="system",
-            content=json.dumps(response, ensure_ascii=False),
-            action="examination_result",
-        )
-    )
-
-    session.record_event(
-        "examination_requested",
-        {
-            "name": examination_name,
-            "available": response["available"],
-            "result": response["result"],
-        },
-    )
-
-    return response
+def request_examination(session: SimulationSession, examination_name: str) -> dict[str, Any]:
+    """F05 case-defined, phase-independent examination in an active F03 session."""
+    _ensure_active(session)
+    from app.feature05.session_actions import perform_examination
+    return perform_examination(session, examination_name, SimulationError)
 
 
-def request_investigation(
-    session: SimulationSession,
-    investigation_name: str,
-) -> dict[str, Any]:
-    """Return a test result only if it exists in the supplied case."""
-    _ensure_phase(
-        session,
-        SimulationPhase.INVESTIGATIONS,
-    )
 
-    investigation_name = investigation_name.strip()
+def request_investigation(session: SimulationSession, investigation_name: str) -> dict[str, Any]:
+    """F05 case-defined investigation (lab/imaging) available throughout active session."""
+    _ensure_active(session)
+    from app.feature05.session_actions import perform_investigation
+    return perform_investigation(session, investigation_name, SimulationError)
 
-    if not investigation_name:
-        raise SimulationError(
-            "Investigation name cannot be empty."
-        )
-
-    session.requested_investigations.append(investigation_name)
-
-    investigations = session.case_data.get(
-        "investigations",
-        {},
-    )
-
-    result = _find_case_result(
-        investigations,
-        investigation_name,
-    )
-
-    if result is None:
-        response = {
-            "available": False,
-            "name": investigation_name,
-            "result": None,
-            "message": (
-                "مفيش نتيجة للتحليل ده في بيانات الحالة."
-            ),
-        }
-    else:
-        response = {
-            "available": True,
-            "name": investigation_name,
-            "result": result,
-            "message": "تم استرجاع نتيجة التحليل من بيانات الحالة.",
-        }
-
-    session.messages.append(
-        SimulationMessage(
-            role="user",
-            content=f"Investigation requested: {investigation_name}",
-            action="request_investigation",
-        )
-    )
-
-    session.messages.append(
-        SimulationMessage(
-            role="system",
-            content=json.dumps(response, ensure_ascii=False),
-            action="investigation_result",
-        )
-    )
-
-    session.record_event(
-        "investigation_requested",
-        {
-            "name": investigation_name,
-            "available": response["available"],
-            "result": response["result"],
-        },
-    )
-
-    return response
 
 
 def submit_diagnosis_and_plan(
@@ -681,20 +574,14 @@ def submit_diagnosis_and_plan(
     diagnosis: str,
     treatment_plan: str,
 ) -> dict[str, str]:
-    """Record the student's proposed diagnosis and plan."""
-    _ensure_phase(
-        session,
-        SimulationPhase.DIAGNOSIS_AND_PLAN,
-    )
+    """Record a diagnosis in any active phase; treatment is optional."""
+    _ensure_active(session)
 
     diagnosis = diagnosis.strip()
     treatment_plan = treatment_plan.strip()
 
     if not diagnosis:
         raise SimulationError("Diagnosis cannot be empty.")
-
-    if not treatment_plan:
-        raise SimulationError("Treatment plan cannot be empty.")
 
     session.diagnosis = diagnosis
     session.treatment_plan = treatment_plan
@@ -727,20 +614,17 @@ def submit_diagnosis_and_plan(
 def complete_session(
     session: SimulationSession,
 ) -> dict[str, Any]:
-    """Complete the session after the diagnosis and plan phase."""
-    _ensure_phase(
-        session,
-        SimulationPhase.DIAGNOSIS_AND_PLAN,
-    )
-
-    if not session.diagnosis or not session.treatment_plan:
-        raise SimulationError(
-            "Submit a diagnosis and treatment plan before completion."
-        )
-
-    advance_phase(
-        session,
-        SimulationPhase.COMPLETED,
-    )
+    """Complete an active session after diagnosis, regardless of phase."""
+    advance_phase(session, SimulationPhase.COMPLETED)
 
     return session.to_dict()
+
+
+def patient_dialogue_history(messages: list[SimulationMessage]) -> list[dict[str, str]]:
+    """Patient-only history: F05 clinical findings must never reach patient LLM context."""
+    return [
+        {"role": message.role, "content": message.content}
+        for message in messages
+        if (message.role == "user" and message.action == "patient_question")
+        or (message.role == "assistant" and message.action == "patient_response")
+    ]
