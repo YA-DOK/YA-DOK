@@ -1,0 +1,17 @@
+sequenceDiagram
+    participant P0 as Admin / reviewer
+    participant P1 as FastAPI
+    participant P2 as Case service
+    participant P3 as PostgreSQL
+    P0->>P1: POST /admin/cases/import: draft blueprint
+    P1->>P2: Validate admin + draft
+    P2->>P3: Persist version; commit
+    P1->>P0: 201: case ID, version, blockers
+    P0->>P1: POST /admin/cases/{code}/approve: blueprint + evidence + confirmations
+    P1->>P2: Check reviewer allowlist; approve snapshot
+    P2->>P3: Persist approved version
+    P1->>P0: Approved pending publication
+    P0->>P1: POST /admin/cases/{code}/versions/{n}/publish
+    P1->>P2: Check publication eligibility
+    P2->>P3: Set published version; commit
+    P1->>P0: Status + published version
