@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant P0 as Student / UI
+    participant P1 as Supabase Auth
+    participant P2 as FastAPI
+    participant P3 as PostgreSQL
+    participant P4 as OpenRouter
+    P0->>P1: Login: email/password or OAuth
+    P1->>P0: Session / access token
+    P0->>P2: GET /cases: bearer token
+    P2->>P3: Read published public metadata
+    P2->>P0: Safe case list
+    P0->>P2: POST /simulation/sessions/from-case: code, mode
+    P2->>P3: Store owned session + case version
+    P2->>P0: Session ID / safe state
+    P0->>P2: POST /sessions/{id}/messages: message
+    P2->>P4: Case-grounded model request
+    P4->>P2: Model response
+    P2->>P0: PatientReply
+    P0->>P2: POST examinations / investigations: item name
+    P2->>P3: Apply action; persist state
+    P2->>P0: Clinical result / state
+    P0->>P2: POST diagnosis: diagnosis, treatment plan; POST complete
+    P2->>P3: Persist completion
+    P0->>P2: GET clinical-review
+    P2->>P0: Review; scoring details unverified
